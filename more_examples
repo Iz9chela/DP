@@ -1,0 +1,33 @@
+parse_prompt_with_llm()
+examples = [
+    {
+        "input": "Plan a weekend hiking trip in the mountains with suggestions for trails and campsites.",
+        "expected_output": {
+            "goal": "Plan a weekend hiking trip",
+            "context": "in the mountains",
+            "instructions": "Provide suggestions for trails and campsites",
+            "constraints": "",
+            "style": ""
+        }
+    },
+    {
+        "input": "Compose a short poem about the beauty of autumn in a nostalgic tone.",
+        "expected_output": {
+            "goal": "Compose a short poem about autumn",
+            "context": "",
+            "instructions": "Use a nostalgic tone",
+            "constraints": "",
+            "style": ""
+        }
+    },
+    {
+        "input": "Write a Python function that sorts a list of numbers in ascending order.",
+        "expected_output": {
+            "goal": "Write a Python function to sort a list of numbers",
+            "context": "",
+            "instructions": "Sort the list in ascending order",
+            "constraints": "",
+            "style": ""
+        }
+    }
+]
