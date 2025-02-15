@@ -1,0 +1,6 @@
+flask
+pymongo
+flask-restful
+flask-cors
+openai
+pytest

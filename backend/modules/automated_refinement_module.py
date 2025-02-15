@@ -1,7 +1,7 @@
 import openai
 import json
 from typing import Dict, Any
-from prompt_evaluator_module import evaluate_user_prompt
+from backend.modules.prompt_evaluator_module import evaluate_user_prompt
 
 
 def load_api_key(filename: str) -> str:
