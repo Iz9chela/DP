@@ -4,9 +4,9 @@ import json
 import logging
 from typing import Dict, Any
 from jinja2 import Template
-from config.config import load_config
-from llm_clients.clients import AIClient, OpenAIClient, get_openai_api_key
-from prompt_parser_validator import extract_json_from_response
+from backend.config.config import load_config
+from backend.llm_clients.clients import AIClient, OpenAIClient, get_openai_api_key
+from backend.prompt_parser_validator import extract_json_from_response
 
 logger = logging.getLogger(__name__)
 

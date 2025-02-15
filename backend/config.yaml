@@ -1,7 +1,7 @@
 provider: "openai"
 
 api_keys:
-  openai: ""
+  openai: "API_KEY"
 
 models:
   openai:
