@@ -12,7 +12,7 @@ def load_api_key(filename: str) -> str:
         exit(1)
 
 # Load API key from file
-openai_api_key = load_api_key("openai_key.txt")
+openai_api_key = load_api_key("../openai_key.txt")
 client = openai.OpenAI(api_key=openai_api_key)
 
 def extract_json_from_response(content: str) -> str:
@@ -45,7 +45,7 @@ def parse_prompt_with_llm(prompt: str) -> dict:
     """
 
     system_instructions = """
-    You are a helper that extracts key elements from a user's prompt and returnsfollo a JSON object that strictly ws this schema:
+    You are a helper that extracts key elements from a user's prompt and returns a JSON object that strictly with this schema:
     {
       "goal": string,
       "context": string,
@@ -150,7 +150,7 @@ def evaluate_parsed_prompt(parsed_key_data: dict, user_prompt: str) -> dict:
 
     # System prompt that *strictly* enforces the JSON schema & 3–5 reasons.
     system_instructions = """
-        "You are a Professional Prompt Evaluator. 
+        "You are a Professional Prompt Evaluator with extensive experience. 
         Your task is to analyze a given prompt's key elements (prompt, goal, context, instructions, constraints, style) 
         and output a JSON object strictly adhering to the schema below:\n\n"
         
@@ -250,3 +250,4 @@ if __name__ == "__main__":
     result = evaluate_user_prompt(user_input)
     print("=== FINAL EVALUATION RESULTS ===")
     print(json.dumps(result, indent=2))
+

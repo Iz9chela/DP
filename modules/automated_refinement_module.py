@@ -13,7 +13,7 @@ def load_api_key(filename: str) -> str:
         exit(1)
 
 
-openai_api_key = load_api_key("openai_key.txt")
+openai_api_key = load_api_key("../openai_key.txt")
 client = openai.OpenAI(api_key=openai_api_key)
 
 
