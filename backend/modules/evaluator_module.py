@@ -7,6 +7,8 @@ from jinja2 import Template
 from backend.config.config import load_config
 from backend.llm_clients.clients import AIClient, OpenAIClient, get_openai_api_key
 from backend.prompt_parser_validator import extract_json_from_response
+from backend.services.routers.prompt_evaluation_router import create_prompt_evaluation
+from backend.utils.path_utils import resolve_path
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +41,7 @@ class Evaluator:
         """
         try:
             # Move up one directory before looking for 'prompts/'
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            absolute_path = os.path.join(base_dir, prompt_path)
+            absolute_path = resolve_path(prompt_path)
 
             if not os.path.exists(absolute_path):
                 raise FileNotFoundError(f"Prompt file not found: {absolute_path}")
@@ -75,7 +76,20 @@ class Evaluator:
         logger.info("Calling AI model '%s' for evaluation using '%s' criteria.", self.model, prompt_key)
         response_content = self.client.call_chat_completion(self.model, messages)
         self.result = extract_json_from_response(response_content)
-        return self.result
+
+        # Build a record to store
+        evaluation_data = {
+            "prompt": self.input_prompt,
+            "evaluation_method": prompt_key,
+            "model": self.model,
+            "parsed_result": self.result,
+            # created_at, updated_at, and is_deleted are handled in the router
+        }
+
+        # Create document in MongoDB
+        saved_record = create_prompt_evaluation(evaluation_data)
+        return saved_record
+        # return self.result
 
 
 if __name__ == "__main__":
@@ -84,7 +98,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     # Load configuration from the YAML file
-    config = load_config("../config.yaml")
+    CONFIG_PATH = resolve_path("config.yaml")
+    config = load_config(CONFIG_PATH)
 
     # Determine provider from configuration
     provider = config.get("provider", "openai")
