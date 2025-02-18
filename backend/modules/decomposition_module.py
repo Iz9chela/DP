@@ -1,148 +1,145 @@
 import json
-import openai
-import re
+import sys
+import logging
+from typing import Dict
+from backend.utils.path_utils import resolve_path
+from backend.config.config import load_config
+from backend.llm_clients.clients import OpenAIClient, get_openai_api_key
+from backend.prompt_parser_validator import extract_json_from_response
+from backend.utils.render_prompt import load_and_render_prompt
 
-def load_api_key(filename: str) -> str:
-    try:
-        with open(filename, "r") as file:
-            return file.read().strip()
-    except Exception as e:
-        print(f"Error: Could not read API key file. {e}")
-        exit(1)
-
-# Load API key from file
-openai_api_key = load_api_key("../openai_key.txt")
-client = openai.OpenAI(api_key=openai_api_key)
-
-
-def extract_json_from_response(content: str) -> dict:
-    """
-    Extracts a JSON object from the AI response, trying multiple patterns.
-    """
-    # Try to extract from markdown code block
-    json_pattern = r"```(?:json)?\s*(\{[\s\S]*\})\s*```"
-    match = re.search(json_pattern, content)
-    if match:
-        json_str = match.group(1)
-    else:
-        # Fallback: try to extract content between first '{' and last '}'
-        try:
-            start = content.index('{')
-            end = content.rindex('}')
-            json_str = content[start:end+1]
-        except ValueError:
-            return {"error": "JSON parsing failed", "raw_response": content}
-    try:
-        return json.loads(json_str)
-    except json.JSONDecodeError:
-        return {"error": "JSON parsing failed", "raw_response": content}
+logger = logging.getLogger(__name__)
 
 class PromptDecomposer:
-    def __init__(self, prompt: str, model: str, automated: bool):
+    def __init__(self, prompt: str, client: OpenAIClient, model: str,
+                 automated: bool = False, prompts: Dict[str, str] = None):
         self.prompt = prompt
+        self.prompts = prompts
+        self.client = client
         self.model = model
         self.automated = automated
         self.result = None  # Store final result
 
-    def _call_ai(self, system_prompt: str, user_prompt: str):
-        """Interacts with the AI model to generate responses."""
-        response = client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ]
-        )
-        return response.choices[0].message.content.strip()
-
     def decompose_automatic(self) -> dict:
-        system_prompt = """
-            You are a prompt Decomposition assistant with extensive experience.
-            Your task is to break down the user's request into clear, granular, and actionable subtasks.
+        prompt_key = "decomposition_auto"
+        prompt_path = self.prompts.get(prompt_key)
+        if not prompt_path:
+            raise ValueError(f"Prompt path for key '{prompt_key}' not provided in configuration.")
 
-            Return a JSON object that strictly with this schema:
-            {
-                "prompt": string,
-                "subtasks": [array of strings]
-            }
+        system_prompt = load_and_render_prompt(prompt_path)
 
-            Follow these instructions:
-            1. Carefully examine the request to understand its full scope and requirements.
-            2. Decompose the complex task into a MAXIMUM of 5 clear and actionable subtasks.
-            3. Ensure each decomposed prompt is clear and focused.
-            4. Organize decomposed prompts in a coherent sequence.
-
-            Throughout this process, maintain a helpful and patient demeanor.
-            Return only valid JSON with no extra commentary.
-            """
         user_prompt = f"Decompose the following task: {self.prompt}"
-        response_content = self._call_ai(system_prompt, user_prompt)
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+
+        response_content = self.client.call_chat_completion(self.model, messages)
         self.result = extract_json_from_response(response_content)
         return self.result
 
+
     def decompose_interactively(self) -> dict:
-        system_prompt = """
-               You are an interactive prompt decomposition assistant with extensive experience.
-               Your task is to break down the user's request into clear, granular, and actionable subtasks,
-               and to engage the user interactively to clarify any ambiguities.
+        prompt_key = "decomposition_user"
+        prompt_path = self.prompts.get(prompt_key)
+        if not prompt_path:
+            raise ValueError(f"Prompt path for key '{prompt_key}' not provided in configuration.")
 
-               Follow these instructions:
-               1. Carefully examine the user's request to understand its full scope and requirements.
-               2. Identify any ambiguous or unclear aspects of the request and ask the user for clarification if needed.
-               3. Decompose the request into a maximum of 5 clear and actionable subtasks.
-               4. Organize the subtasks in a coherent sequence.
-               5. Return a JSON object with the following schema:
+        system_prompt = load_and_render_prompt(prompt_path)
 
-               {
-                  "prompt": string,
-                  "subtasks": [array of strings]
-               }
-
-               Maintain a helpful and patient demeanor and encourage interactive dialogue for further refinement.
-               In your final answer, output only valid JSON with no extra commentary.
-               """
-        # Phase 1: Initial attempt at decomposition.
         initial_prompt = f"Decompose the following task: {self.prompt}"
-        initial_response = self._call_ai(system_prompt, initial_prompt)
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": initial_prompt}
+        ]
+        
+        initial_response = self.client.call_chat_completion(self.model, messages)
         json_result = extract_json_from_response(initial_response)
 
         if "error" not in json_result:
             self.result = json_result
             return self.result
-        else:
-            # The model likely asked clarifying questions (1-5 questions).
-            print("The model has asked the following clarifying questions:")
-            print(initial_response)
-            clarifications = input("Please answer the above questions to clarify the task:\n")
 
-            # Phase 2: Request the final answer in JSON format using both the original request and clarifications.
-            final_prompt = (
-                f"Based on the original request: '{self.prompt}'\n"
-                f"and the following clarifications: {clarifications}\n"
-                "now produce the final JSON decomposition strictly following this schema:\n"
-                '{ "prompt": string, "subtasks": [array of strings] }.\n'
-                "Your final answer must be valid JSON with no extra commentary."
-            )
-            final_response = self._call_ai(system_prompt, final_prompt)
-            json_result = extract_json_from_response(final_response)
-            if "error" in json_result:
-                print("Final answer did not produce valid JSON. Raw response:")
-                print(final_response)
+        print("The model has asked the following clarifying questions:")
+        print(initial_response)
+
+        clarifications = input("Please answer the above questions to clarify the task:\n").strip()
+        
+        if not clarifications:
+            print("No clarifications provided. Using the initial response.")
             self.result = json_result
             return self.result
+
+        final_prompt = (
+            f"Based on the original request: '{self.prompt}'\n"
+            f"and the following clarifications: {clarifications}\n"
+            "Now produce the final JSON decomposition strictly following this schema:\n"
+            '{ "prompt": string, "subtasks": [array of strings] }.\n'
+            "Your final answer must be valid JSON with no extra commentary."
+        )
+
+        messages.append({"role": "user", "content": final_prompt})
+        final_response = self.client.call_chat_completion(self.model, messages)
+        
+        json_result = extract_json_from_response(final_response)
+
+        if "error" in json_result:
+            print("Final answer did not produce valid JSON. Raw response:")
+            print(final_response)
+
+        self.result = json_result
+        return self.result
+
 
 
 # Example Usage
 if __name__ == "__main__":
+    # Configure logging
+
+    logging.basicConfig(level=logging.INFO)
+
+    # Load configuration from the YAML file
+    CONFIG_PATH = resolve_path("config.yaml")
+    config = load_config(CONFIG_PATH)
+
+    # Determine provider from configuration
+    provider = config.get("provider", "openai")
+
+    # Retrieve the API key (environment variable takes precedence)
+    open_api_key = get_openai_api_key(config)
+    if not open_api_key:
+        logger.error("No API key provided for provider: %s", provider)
+        sys.exit(1)
+
+    # Instantiate the appropriate AI client based on provider
+    if provider.lower() == "openai":
+        client = OpenAIClient(open_api_key)
+    else:
+        logger.error("Provider %s not implemented.", provider)
+        sys.exit(1)
+
+    # Get the model from configuration
+    model = config["models"].get(provider, {}).get("default")
+    if not model:
+        logger.error("No default model specified for provider %s in configuration.", provider)
+        sys.exit(1)
+
+    # Get prompt file paths from configuration
+    prompts = config.get("prompts", {})
+
+    # Get user input
     user_input = input("Enter your query: ")
 
-    model = "gpt-4o"  # Replace with the appropriate model name if necessary
+    automated_mode = input("Run in automated mode? (yes/no): ").strip().lower()
+    # if automated_mode not in ['yes', 'no']:
+    #     print("Invalid choice! Please enter 'yes' or 'no'.")
+    #     exit()
+    automate = (automated_mode == 'yes')
 
-    automated_mode = input("Run in automated mode? (yes/no): ").strip().lower() == "yes"
+    decomposer = PromptDecomposer(user_input, client, model, automate, prompts)
 
-    decomposer = PromptDecomposer(user_input, model, automated=automated_mode)
-
-    if automated_mode:
+    if automated_mode == "yes":
         final_result = decomposer.decompose_automatic()
     else:
         final_result = decomposer.decompose_interactively()
