@@ -1,5 +1,4 @@
 import yaml
-import os
 import logging
 from typing import Dict, Any
 from backend.utils.path_utils import resolve_path
@@ -20,9 +19,3 @@ def load_config(filepath: str) -> Dict[str, Any]:
     except Exception as e:
         logger.error("Failed to load configuration file %s: %s", absolute_path, e)
         raise
-
-def get_mongo_uri(config: Dict[str, Any]) -> str:
-    return os.getenv("MONGO_URI") or config["database"].get("uri", "mongodb+srv://{user}:{pass}@dp-database.fczwf.mongodb.net/?retryWrites=true&w=majority&appName=DP-Database")
-
-def get_db_name(config: Dict[str, Any]) -> str:
-    return os.getenv("MONGO_DB_NAME") or config["database"].get("database_name", "dp_database")

@@ -5,7 +5,7 @@ from typing import Dict, Any
 from backend.config.config import load_config
 from backend.llm_clients.clients import AIClient, OpenAIClient, get_openai_api_key
 from backend.prompt_parser_validator import extract_json_from_response
-from backend.services.routers.prompt_evaluation_router import create_prompt_evaluation
+from backend.services.routers.prompt_evaluator_router import create_prompt_evaluation
 from backend.utils.path_utils import resolve_path
 from backend.utils.render_prompt import load_and_render_prompt
 

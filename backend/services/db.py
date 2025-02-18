@@ -1,30 +1,38 @@
 import logging
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from backend.services.settings import MONGO_URI, DB_NAME
 
 logger = logging.getLogger(__name__)
 
-client = None
-db = None
+client: AsyncIOMotorClient = None
+database: AsyncIOMotorDatabase = None
 
-def init_db():
-    global client, db
+def init_db() -> None:
+    """
+    Initializes a singleton Motor client and database.
+    This function should be called on application startup.
+    """
+    global client, database
     if client is None:
-        try:
-            client = MongoClient(MONGO_URI)
-            db = client[DB_NAME]
-            logger.info("Connected to MongoDB at %s, using DB: %s", MONGO_URI, DB_NAME)
-        except Exception as e:
-            logger.error("Could not connect to MongoDB: %s", e)
-            raise
+        client = AsyncIOMotorClient(MONGO_URI)
+        database = client[DB_NAME]
+        logger.info("Connected to MongoDB at %s, using DB: %s", MONGO_URI, DB_NAME)
 
-def get_db():
+def get_database() -> AsyncIOMotorDatabase:
     """
-    Returns a reference to the MongoDB database.
-    Initializes the connection if it hasn't been created yet.
+    Returns the global Motor database instance.
+    If the database hasn't been initialized, it calls init_db().
     """
-    global db
-    if db is None:
+    if database is None:
         init_db()
-    return db
+    return database
 
+def close_db() -> None:
+    """
+    Closes the Motor client.
+    This function should be called on application shutdown.
+    """
+    global client
+    if client is not None:
+        client.close()
+        logger.info("MongoDB client closed.")

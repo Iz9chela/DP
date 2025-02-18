@@ -1,60 +1,29 @@
-import sys
+from backend.services.routers import prompt_evaluator_router
+
+import uvicorn
 import logging
-import os
+from fastapi import FastAPI
+import motor.motor_asyncio
+from backend.services.settings import MONGO_URI, DB_NAME
 
-from backend.config.config import load_config
-from backend.services.db import init_db
-from backend.llm_clients.clients import OpenAIClient
-from backend.modules.evaluator_module import Evaluator
-from backend.utils.path_utils import resolve_path
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def main():
-    # 1) Initialize MongoDB
-    init_db()
+async def lifespan(app: FastAPI):
+    # Startup: initialize Motor client and attach to app.state
+    app.state.mongo_client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
+    app.state.mongo_db = app.state.mongo_client[DB_NAME]
+    logger.info("Connected to MongoDB at %s, using DB: %s", MONGO_URI, DB_NAME)
+    yield  # Application runs while yielding
+    # Shutdown: close the Motor client
+    app.state.mongo_client.close()
+    logger.info("MongoDB client closed.")
+app = FastAPI(
+    title="Prompt Evaluator API",
+    description="API for evaluating prompts using AI and storing results in MongoDB",
+    version="1.0.0"
+)
 
-    # 2) Load config
-    CONFIG_PATH = resolve_path("config.yaml")
-    config = load_config(CONFIG_PATH)
-
-    # 3) Determine provider (assuming openai for now)
-    provider = config.get("provider", "openai").lower()
-
-    # 4) API key
-    api_key = os.getenv("OPENAI_API_KEY") or config["api_keys"].get("openai")
-    if not api_key:
-        logger.error("No API key found.")
-        sys.exit(1)
-
-    # 5) Create the appropriate client
-    if provider == "openai":
-        client = OpenAIClient(api_key=api_key)
-    else:
-        logger.error("Provider '%s' not implemented.", provider)
-        sys.exit(1)
-
-    # 6) Determine model and prompts
-    model = config["models"][provider]["default"]
-    prompts = config["prompts"]
-
-    # 7) Get user input
-    input_prompt = input("Enter the prompt to evaluate: ").strip()
-    method_choice = input("Choose evaluation method ('human' or 'llm'): ").strip().lower()
-    human_evaluation = (method_choice == "human")
-
-    # 8) Evaluate
-    evaluator = Evaluator(
-        input_prompt=input_prompt,
-        client=client,
-        model=model,
-        prompts=prompts,
-        human_evaluation=human_evaluation
-    )
-
-    result = evaluator.evaluate()
-    logger.info("Evaluation stored in MongoDB with data:\n%s", result)
+app.include_router(prompt_evaluator_router.router, prefix="/evaluations", tags=["Evaluations"])
 
 if __name__ == "__main__":
-    main()
+    uvicorn.run("backend.services.main:app", host="127.0.0.1", port=8000)

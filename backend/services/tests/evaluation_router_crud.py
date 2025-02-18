@@ -1,70 +1,69 @@
-import logging
-from backend.services.db import init_db, get_db
-from backend.services.routers.prompt_evaluation_router import (
-    create_prompt_evaluation,
-    get_prompt_evaluation,
-    list_prompt_evaluations,
-    update_prompt_evaluation,
-    delete_prompt_evaluation,
-)
+from fastapi.testclient import TestClient
+from backend.services.main import app
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+client = TestClient(app)
 
-def test_create_and_get():
-    db = get_db()
-    data = {
-        "prompt": "Test prompt for CRUD operations.",
+
+def test_create_and_get_evaluation():
+    post_data = {
+        "prompt": "Test prompt for API integration",
         "evaluation_method": "human",
         "model": "gpt-3.5-turbo",
-        "parsed_result": {"prompt_rating": 7, "reasons": ["Initial test reason"]},
+        "parsed_result": {"prompt_rating": 8, "reasons": ["Well-defined", "Clear instructions"]}
     }
-    created_record = create_prompt_evaluation(data)
-    record_id = created_record.get("id")
-    assert record_id is not None
-    retrieved_record = get_prompt_evaluation(record_id)
-    assert retrieved_record is not None
-    assert retrieved_record["prompt"] == "Test prompt for CRUD operations."
+    response = client.post("/evaluations/", json=post_data)
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert "id" in data, "Response should include an 'id' field"
+    # Optionally, verify that '_id' is not present
+    assert "_id" not in data, "Response should not include '_id' field"
 
-def test_list():
-    db = get_db()
-    records = list_prompt_evaluations(limit=5)
-    assert isinstance(records, list)
+    eval_id = data["id"]
+    get_response = client.get(f"/evaluations/{eval_id}")
+    assert get_response.status_code == 200, get_response.text
+    get_data = get_response.json()
+    assert get_data["prompt"] == post_data["prompt"]
 
-def test_update():
-    db = get_db()
-    data = {
+
+def test_list_evaluations():
+    response = client.get("/evaluations/?limit=5")
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) <= 5
+
+
+def test_update_evaluation():
+    post_data = {
         "prompt": "Prompt to update",
         "evaluation_method": "llm",
         "model": "gpt-3.5-turbo",
-        "parsed_result": {"prompt_rating": 5, "reasons": ["Before update"]},
+        "parsed_result": {"prompt_rating": 5, "reasons": ["Needs improvement"]}
     }
-    created = create_prompt_evaluation(data)
-    record_id = created.get("id")
-    updated_data = {"parsed_result": {"prompt_rating": 8, "reasons": ["After update"]}}
-    updated_record = update_prompt_evaluation(record_id, updated_data)
-    assert updated_record is not None
-    assert updated_record["parsed_result"]["prompt_rating"] == 8
+    post_resp = client.post("/evaluations/", json=post_data)
+    assert post_resp.status_code == 200, post_resp.text
+    eval_id = post_resp.json()["id"]
 
-def test_delete():
-    db = get_db()
-    data = {
+    update_data = {"parsed_result": {"prompt_rating": 9, "reasons": ["After update"]}}
+    put_resp = client.put(f"/evaluations/{eval_id}", json=update_data)
+    assert put_resp.status_code == 200, put_resp.text
+    updated = put_resp.json()
+    assert updated["parsed_result"]["prompt_rating"] == 9
+
+
+def test_delete_evaluation():
+    post_data = {
         "prompt": "Prompt to delete",
         "evaluation_method": "human",
         "model": "gpt-3.5-turbo",
-        "parsed_result": {"prompt_rating": 6, "reasons": ["Delete test"]},
+        "parsed_result": {"prompt_rating": 6, "reasons": ["Delete me"]}
     }
-    created = create_prompt_evaluation(data)
-    record_id = created.get("id")
-    success = delete_prompt_evaluation(record_id)
-    assert success is True
-    deleted_record = get_prompt_evaluation(record_id)
-    assert deleted_record is None
+    post_resp = client.post("/evaluations/", json=post_data)
+    assert post_resp.status_code == 200, post_resp.text
+    eval_id = post_resp.json()["id"]
 
-if __name__ == "__main__":
-    init_db()
-    test_create_and_get()
-    test_list()
-    test_update()
-    test_delete()
-    logger.info("All CRUD tests passed.")
+    del_resp = client.delete(f"/evaluations/{eval_id}")
+    assert del_resp.status_code == 200, del_resp.text
+
+    get_resp = client.get(f"/evaluations/{eval_id}")
+    assert get_resp.status_code == 404, "Deleted evaluation should not be retrievable"
