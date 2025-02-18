@@ -1,6 +1,7 @@
 import time
 import logging
 import openai
+import asyncio
 import os
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
@@ -45,14 +46,14 @@ class OpenAIClient(AIClient):
         self.max_retries = max_retries
         self.backoff_factor = backoff_factor
 
-    def call_chat_completion(self, model: str, messages: List[Dict[str, str]]) -> str:
+    async def call_chat_completion(self, model: str, messages: List[Dict[str, str]]) -> str:
         """
         Call the OpenAI chat completion API with retry logic.
         """
         attempt = 0
         while attempt < self.max_retries:
             try:
-                response = self.client.chat.completions.create(
+                response = await self.client.chat.completions.create(
                     model=model,
                     max_tokens=1024,
                     temperature=0.0,
@@ -67,7 +68,7 @@ class OpenAIClient(AIClient):
                 attempt += 1
                 sleep_time = self.backoff_factor * (2 ** (attempt - 1))
                 logger.error("Error calling OpenAI API on attempt %d: %s. Retrying in %f seconds.", attempt, e, sleep_time)
-                time.sleep(sleep_time)
+                await asyncio.sleep(sleep_time)
         raise Exception("Max retries exceeded for OpenAI API call.")
 
 # Additional client implementations (e.g., for Claude, BERT) can be added here.

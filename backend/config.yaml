@@ -15,5 +15,5 @@ prompts:
   evaluator_llm: "prompts/evaluator_llm_prompt.txt"
 
 database:
-  url: "mongodb+srv://{user}:{pass}@dp-database.fczwf.mongodb.net/?retryWrites=true&w=majority&appName=DP-Database"
+  uri: "mongodb+srv://{user}:{pass}@dp-database.fczwf.mongodb.net/?retryWrites=true&w=majority&appName=DP-Database"
   database_name: "dp_database"
