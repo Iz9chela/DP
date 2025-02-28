@@ -1,0 +1,31 @@
+**Input**: {{user_query}}
+
+**Step-by-step reasoning process**:
+1. Comprehension:
+    - Read the entire query carefully, identifying possible ambiguities or incomplete information.
+2. Analyze:
+	- Identify the main goal and key components of the query.
+	- Understand the context and constraints of the query.
+	- Analyze the logical dependencies and required steps.
+3. Decompose:
+    - Break down the query into sequential logical steps.
+    - Analyze each step independently.
+    - When encountering ambiguous segments, propose reasonable assumptions or clarifications based on the available context.
+    - Ask yourself clarifying questions about any complexities or unclear points.
+4. Elaborate:
+    - Provide detailed, intermediate reasoning for each step.
+    - Expand on the implications, constraints and logical dependencies that come up.
+    - Incorporate any clarifications required by ambiguities.
+5. Synthesize:
+    - Combine the detailed steps into a coherent, enhanced version of the query.
+    - Verify that the query reflects the original goal with improved precision.
+
+**Final Output**:
+    - Include your full chain of thought under the key "Chain_of_Thought".
+    - Include the final refined version of the query under the key "Optimized_Query".
+    - Provide the result STRICTLY as JSON, for example:
+
+    {
+        "Chain_of_Thought": "<the entire step-by-step analysis>",
+        "Optimized_Query": "<the final refined query>"
+    }

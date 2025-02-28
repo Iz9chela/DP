@@ -1,255 +1,245 @@
-import openai
-import json
-from typing import Dict, Any
-from backend.modules.prompt_evaluator_module import evaluate_user_prompt
+import logging
+import sys
+from typing import Dict, Any, Optional
 
+# For demonstration, we assume these modules are available in your codebase:
+from backend.config.config import load_config
+from backend.llm_clients.clients import AIClient, OpenAIClient, get_api_key, AnthropicClient
+from backend.modules.evaluator_module import Evaluator
+from backend.utils.path_utils import resolve_path
+from backend.utils.render_prompt import load_and_render_prompt, build_user_message
+from backend.utils.prompt_parser_validator import extract_json_from_response
 
-def load_api_key(filename: str) -> str:
-    try:
-        with open(filename, "r") as file:
-            return file.read().strip()
-    except Exception as e:
-        print(f"Error: Could not read API key file. {e}")
-        exit(1)
-
-
-openai_api_key = load_api_key("../openai_key.txt")
-client = openai.OpenAI(api_key=openai_api_key)
+logger = logging.getLogger(__name__)
 
 
 class AutomatedRefinementModule:
     """
-    A class that uses the output of the prompt_evaluator_module
-    to automatically refine and decompose complex user prompts.
+    A module to refine a user query using one of 5 available optimization techniques:
+    (CoT, SC, CoD, PromptChain, ReAct).
 
-    Key capabilities:
-    1. Assess feasibility (0 to 10).
-    2. Generate clarifying questions if needed.
-    3. Resolve conflicts (if style, constraints, etc. are contradictory).
-    4. Produce a refined version of the user prompt that addresses the evaluator’s feedback.
+    Attributes:
+        user_query (str): The original query from the user.
+        client (AIClient): An AI client instance (e.g., OpenAIClient).
+        model (str): The model identifier to use.
+        prompts (dict): Mapping of technique names -> their prompt template paths.
+        max_iterations (int): Maximum number of optimization iterations (default: 3).
+        hyperparams (dict): Hyperparameters for LLM calls.
+        is_optimizing (bool): Simple lock preventing parallel optimization.
     """
 
-    def __init__(self, model_name: str = "gpt-3.5-turbo"):
-        self.model_name = model_name
-
-    def assess_feasibility(self, user_prompt: str, evaluation_output: dict) -> Dict[str, Any]:
-        """
-        Performs a feasibility check (0 to 10) to see if the request is solvable 
-        given the context, constraints, and the evaluator’s findings.
-
-        Returns a dict:
-        {
-          "feasibility_score": int,  # 0 to 10
-          "feasibility_explanation": str
+    def __init__(
+        self,
+        user_query: str,
+        client: AIClient,
+        model: str,
+        prompts: Dict[str, str],
+        max_iterations: int = 3,
+        hyperparams: Optional[dict] = None
+    ):
+        self.user_query = user_query
+        self.client = client
+        self.model = model
+        self.prompts = prompts
+        self.max_iterations = max_iterations
+        self.hyperparams = hyperparams or {
+            "max_tokens": 1024,
+            "temperature": 0.7,
+            "top_p": 1.0,
+            "frequency_penalty": 0,
+            "presence_penalty": 0,
+            "stop_sequences": []
         }
+
+        # Tracking
+        self.final_optimized_query: str = ""
+        self.optimized_output: Dict[str, Any] = {}
+        self.is_optimizing: bool = False  # Simple concurrency lock
+
+    async def evaluate_query(self, use_human_eval: bool, query_text: str) -> Dict[str, Any]:
         """
+        Evaluate the given query using the Evaluator class. Returns a dict that includes:
+        {
+            "prompt_rating": <int>,
+            "reasons": [<string>, ...]
+        }
 
-        # Build a system message summarizing relevant evaluator data
-        system_prompt = f"""
-        You are a feasibility assessor. Read the user's prompt and the evaluator's findings, 
-        then decide if the user prompt is fully solvable (score=10) or unsolvable (score=0), 
-        or somewhere in-between.
-
-        User Prompt: {user_prompt}
-
-        Evaluator's Findings:
-        clarity_rating = {evaluation_output["evaluation"].get("clarity_rating", "N/A")}
-        difficulty = {evaluation_output["evaluation"].get("difficulty", "N/A")}
-        reasons = {evaluation_output["evaluation"].get("reasons", [])}
-        conflicts = {evaluation_output["evaluation"].get("conflicts", {})}
-        coherence_assessment = {evaluation_output["evaluation"].get("coherence_assessment", "")}
-
-        Rules:
-        1. Return a JSON with exactly two fields: 'feasibility_score' (int) and 'feasibility_explanation' (string).
-        2. feasibility_score ranges from 0 to 10.
-        3. feasibility_explanation EXACTLY 1-3 sentences justifying your score.
-
-        Return ONLY valid JSON. No extra text.
+        The logic for storing in DB is inside Evaluator -> create_prompt_evaluation().
+        Adjust as needed.
         """
-
-        response = openai.ChatCompletion.create(
-            model=self.model_name,
-            temperature=0.0,
-            messages=[
-                {"role": "system", "content": system_prompt}
-            ]
+        # Decide which evaluator prompt to use (human or LLM). We'll assume "llm" here.
+        # If you need a user toggle, parameterize it.
+        evaluator = Evaluator(
+            input_prompt=query_text,
+            client=self.client,
+            model=self.model,
+            human_evaluation=use_human_eval,
+            prompts=self.prompts
         )
+        logger.info("Evaluating query with the Evaluator module.")
 
-        content = response.choices[0].message.content.strip()
+        evaluation_result = await evaluator.evaluate()
+        return evaluation_result
 
-        # Attempt to parse the JSON output from the LLM
-        try:
-            feasibility_data = json.loads(content)
-        except json.JSONDecodeError:
-            # Fallback if the LLM fails to produce valid JSON
-            feasibility_data = {
-                "feasibility_score": 5,
-                "feasibility_explanation": (
-                    "Could not parse LLM output. Defaulting feasibility_score=5."
-                )
-            }
-
-        return feasibility_data
-
-    def refine_prompt(
-            self,
-            user_prompt: str,
-            evaluation_output: dict,
-            feasibility_data: dict,
-            interactive: bool = False
+    def optimize_query(
+        self, selected_technique: str, iterations: Optional[int] = None
     ) -> Dict[str, Any]:
         """
-        Refines the user prompt based on:
-        - The evaluator's output (clarity, difficulty, reasons, conflicts, etc.)
-        - The feasibility assessment
+        Optimize the user query using the specified technique over a number of iterations.
+        Each technique has its own prompt template and output structure.
 
-        If 'interactive' is True, it can prompt the user for clarifications.
-
-        Returns a dict with:
-        {
-          "feasibility_score": int,
-          "feasibility_explanation": str,
-          "refined_prompt": str,
-          "clarifying_questions": [array of questions],
-          "style_decision": string
-        }
+        Returns the raw JSON extracted from the LLM response.
         """
+        if self.is_optimizing:
+            raise RuntimeError("An optimization process is already in progress. Please wait.")
 
-        # Extract data from the evaluator's output
-        clarity = evaluation_output["evaluation"].get("clarity_rating", 5)
-        difficulty = evaluation_output["evaluation"].get("difficulty", "Easy")
-        conflicts = evaluation_output["evaluation"].get("conflicts", {})
-        reasons = evaluation_output["evaluation"].get("reasons", [])
-        coherence = evaluation_output["evaluation"].get("coherence_assessment", "")
-
-        # Feasibility from the LLM
-        feasibility_score = feasibility_data.get("feasibility_score", 5)
-        feasibility_explanation = feasibility_data.get("feasibility_explanation", "")
-
-        # Build a system message to refine the prompt
-        system_refinement_prompt = f"""
-        You are an Automated Refinement Agent.
-
-        --- USER PROMPT ---
-        {user_prompt}
-
-        --- EVALUATOR OUTPUT ---
-        Clarity: {clarity}/10
-        Difficulty: {difficulty}
-        Reasons: {reasons}
-        Conflicts: {conflicts}
-        Coherence: {coherence}
-
-        --- FEASIBILITY ---
-        Score: {feasibility_score}/10
-        Explanation: {feasibility_explanation}
-
-        --- TASK ---
-        1. If feasibility_score < 4, the task might be missing info or is very difficult. 
-           Suggest ways to fill in missing info or reduce complexity.
-        2. If conflicts.flag == true, propose how to resolve the conflicting instructions 
-           (e.g. unify style, relax constraints, etc.).
-        3. Suggest up to 3 clarifying questions if more info is needed from the user.
-        4. Propose a refined prompt that addresses the evaluator’s concerns:
-           - Resolve conflicting instructions
-           - Add missing details or clarifications if possible
-           - Keep it coherent
-           - Possibly override style or constraints to make it feasible
-
-        Output a valid JSON with exactly these fields:
-        {{
-          "refined_prompt": string,
-          "clarifying_questions": [array of strings],
-          "style_decision": string  # e.g. "Adopted a formal style" or "Kept user’s requested informal style"
-        }}
-
-        Return ONLY valid JSON.
-        """
-
-        # Call the LLM to get the refinement suggestions
-        response = openai.ChatCompletion.create(
-            model=self.model_name,
-            temperature=0.0,
-            messages=[
-                {"role": "system", "content": system_refinement_prompt}
-            ]
-        )
-
-        content = response.choices[0].message.content.strip()
-
-        # Attempt to parse as JSON
+        self.is_optimizing = True
         try:
-            refinement_data = json.loads(content)
-        except json.JSONDecodeError:
-            refinement_data = {
-                "refined_prompt": user_prompt,
-                "clarifying_questions": [],
-                "style_decision": "No changes - parse error in LLM output"
+            technique_prompt_path = self.prompts.get(selected_technique)
+            if not technique_prompt_path:
+                raise ValueError(f"Technique '{selected_technique}' is not supported.")
+
+            iters = iterations or self.max_iterations
+
+            # Prepare context for the prompt template
+            prompt_context = {
+                "user_query": self.user_query,
+                "number_of_iterations": iters,
+                "number_of_versions": iters
             }
 
-        # If interactive mode, ask the user for clarifications
-        clarifying_qs = refinement_data.get("clarifying_questions", [])
-        if interactive and clarifying_qs:
-            user_answers = {}
-            print("The system suggests the following clarifications:\n")
-            for q in clarifying_qs:
-                print(f"- {q}")
-                ans = input("Your answer: ")
-                user_answers[q] = ans
+            # Render the chosen technique's prompt
+            rendered_prompt = load_and_render_prompt(technique_prompt_path, prompt_context)
+            messages = build_user_message(rendered_prompt)
 
-            # In a real system, you might do another LLM call to incorporate user answers
-            # and finalize the refined prompt. Here, we'll just note them.
+            # Call the LLM
+            response_content = self.client.call_chat_completion(
+                model=self.model,
+                messages=messages
+                # You can expand self.hyperparams if your LLM client supports them, e.g.:
+                # **self.hyperparams
+            )
+            self.optimized_output = extract_json_from_response(response_content)
 
-        result = {
-            "feasibility_score": feasibility_score,
-            "feasibility_explanation": feasibility_explanation,
-            "refined_prompt": refinement_data.get("refined_prompt", user_prompt),
-            "clarifying_questions": clarifying_qs,
-            "style_decision": refinement_data.get("style_decision", "No style decision found"),
+            # Depending on the prompt technique, the "optimized" query might appear in different places.
+            # For instance, CoT has "Optimized_Query" in a single JSON object,
+            # while SC might have multiple versions then a final "Optimized_Query" key.
+            # We'll handle a few known patterns as examples:
+
+            if selected_technique in ["CoT", "SC"]:
+                self.final_optimized_query = self.optimized_output.get("Optimized_Query", "")
+            elif selected_technique == "CoD":
+                if isinstance(self.optimized_output, list) and len(self.optimized_output) > 0:
+                    last_item = self.optimized_output[-1]
+                    self.final_optimized_query = last_item.get("Optimized_Query", "")
+            elif selected_technique == "PC":
+                if isinstance(self.optimized_output, list):
+                    last_item = self.optimized_output[-1]
+                    self.final_optimized_query = last_item.get("Optimized_Query", "")
+            elif selected_technique == "ReAct":
+                if isinstance(self.optimized_output, list):
+                    # The last element might be {"Optimized_Query": "..."}
+                    if len(self.optimized_output) > 0 and "Optimized_Query" in self.optimized_output[-1]:
+                        self.final_optimized_query = self.optimized_output[-1]["Optimized_Query"]
+
+            # If the technique doesn't place the final query in a standard key, handle accordingly.
+
+        finally:
+            self.is_optimizing = False  # Unlock
+
+        return self.optimized_output
+
+    async def refine_and_evaluate(self, use_human_eval: bool, technique: str) -> Dict[str, Any]:
+        """
+        High-level orchestration:
+          1. Evaluate the initial user query.
+          2. Run the chosen optimization technique.
+          3. Re-evaluate the final optimized query.
+          4. Return all relevant info (including DB records if needed).
+        """
+
+        logger.info("Evaluating the original user query before optimization...")
+        initial_eval = await self.evaluate_query(use_human_eval, self.user_query)
+
+        # 2. Perform the optimization with the chosen technique
+        logger.info(f"Optimizing user query with technique '{technique}'...")
+        self.optimize_query(selected_technique=technique)
+
+        # 3. Re-evaluate the newly optimized query
+        logger.info("Evaluating the final optimized query...")
+        final_eval = {}
+        if self.final_optimized_query:
+            final_eval = await self.evaluate_query(use_human_eval, self.final_optimized_query)
+
+        # You can store these evaluations in MongoDB or any DB you prefer.
+        # For instance:
+        #   db.my_collection.insert_one({
+        #       "original_query": self.user_query,
+        #       "initial_eval": initial_eval["parsed_result"],
+        #       "optimized_query": self.final_optimized_query,
+        #       "final_eval": final_eval["parsed_result"]
+        #   })
+
+        return {
+            "original_query": self.user_query,
+            "initial_evaluation": initial_eval.get("parsed_result", {}),
+            "technique_used": technique,
+            "optimized_output": self.optimized_output,
+            "final_optimized_query": self.final_optimized_query,
+            "final_evaluation": final_eval.get("parsed_result", {})
         }
-        return result
-
-
-def run_automated_refinement(user_prompt: str, interactive: bool = False) -> Dict[str, Any]:
-    """
-    High-level convenience function that:
-    1) Calls evaluate_user_prompt from prompt_evaluator
-    2) Assesses feasibility
-    3) Refines the prompt
-    4) Returns a final dictionary with refinement info
-    """
-
-    # 1) Evaluate
-    evaluation_output = evaluate_user_prompt(user_prompt)
-
-    # 2) Create an instance of AutomatedRefinementModule
-    arm = AutomatedRefinementModule(model_name="gpt-3.5-turbo")
-
-    # 3) Assess Feasibility
-    feasibility_data = arm.assess_feasibility(user_prompt, evaluation_output)
-
-    # 4) Refine
-    refinement_result = arm.refine_prompt(
-        user_prompt=user_prompt,
-        evaluation_output=evaluation_output,
-        feasibility_data=feasibility_data,
-        interactive=interactive
-    )
-
-    return refinement_result
 
 
 if __name__ == "__main__":
     """
-    Example usage:
-    1) The user enters a prompt.
-    2) We run the automated refinement pipeline.
-    3) Print out results.
+    Example usage when running this module directly.
+    Make sure your config.yaml has the required structure for 'provider',
+    API keys, and prompt file paths for each technique.
     """
+    logging.basicConfig(level=logging.INFO)
 
-    sample_prompt = input("Enter the prompt to refine: ")
+    # Load config
+    CONFIG_PATH = resolve_path("config.yaml")
+    config = load_config(CONFIG_PATH)
 
-    result = run_automated_refinement(sample_prompt, interactive=False)
+    provider = config.get("provider", "openai")
+    api_key = get_api_key(provider, config)
+    if not api_key:
+        logger.error("No API key provided for provider: %s", provider)
+        sys.exit(1)
 
-    print("\n=== AUTOMATED REFINEMENT RESULT ===")
-    print(json.dumps(result, indent=2))
+    if provider.lower() == "openai":
+        client = OpenAIClient(api_key)
+    elif provider.lower() == "claude":
+        client = AnthropicClient(api_key)
+    else:
+        raise NotImplementedError(f"Provider '{provider}' not implemented.")
+
+    # Example model
+    model = config["models"].get(provider, {}).get("default")
+    if not model:
+        logger.error("No default model specified for provider %s in configuration.", provider)
+        sys.exit(1)
+
+    prompts = config.get("prompts", {})
+
+    user_query = input("Enter your query: ")
+    refinement_module = AutomatedRefinementModule(
+        user_query=user_query,
+        client=client,
+        model=model,
+        prompts=prompts
+    )
+
+    refinement_module.optimize_query(selected_technique="CoD", iterations=3)
+    # Pick one technique among ["CoT", "SC", "CoD", "PC", "ReAct"]
+    # chosen_technique = "CoT"
+    # human_evaluation = True
+
+    # Because we use async evaluation, we run our refine_and_evaluate inside an event loop.
+    # async def run_refinement():
+    #     result = await refinement_module.refine_and_evaluate(human_evaluation, chosen_technique)
+    #     print("=== Final Result ===")
+    #     print(result)
+    #
+    # asyncio.run(run_refinement())

@@ -4,8 +4,8 @@ import logging
 from typing import Dict
 from backend.utils.path_utils import resolve_path
 from backend.config.config import load_config
-from backend.llm_clients.clients import OpenAIClient, get_openai_api_key
-from backend.prompt_parser_validator import extract_json_from_response
+from backend.llm_clients.clients import OpenAIClient, get_api_key
+from backend.utils.prompt_parser_validator import extract_json_from_response
 from backend.utils.render_prompt import load_and_render_prompt
 
 logger = logging.getLogger(__name__)
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     provider = config.get("provider", "openai")
 
     # Retrieve the API key (environment variable takes precedence)
-    open_api_key = get_openai_api_key(config)
+    open_api_key = get_api_key(config)
     if not open_api_key:
         logger.error("No API key provided for provider: %s", provider)
         sys.exit(1)

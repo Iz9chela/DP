@@ -22,14 +22,15 @@ def sanitize_document(doc: Dict[str, Any]) -> Dict[str, Any]:
 
 @router.post("/", response_model=PromptEvaluator)
 async def create_prompt_evaluation(
-        evaluation_data: Dict[str, Any],
-        db=Depends(get_database)
+        evaluation_data: Dict[str, Any]
+        # db=Depends(get_database)
 ) -> Dict[str, Any]:
     """
     Inserts a new document into the 'prompt_evaluator' collection.
     Returns the inserted document with 'id' as a string.
     """
     try:
+        db = get_database()
         # Validate input using Pydantic
         p_model = PromptEvaluator(**evaluation_data)
         doc = p_model.model_dump(by_alias=True)

@@ -1,0 +1,30 @@
+**Input**: {{user_query}}
+
+**Instructions**:
+1. Generate Multiple Interpretations:
+    - Create {{number_of_versions}} plausible interpretations of the query, each rephrased or structured differently.
+2. Independent Reasoning:
+    - Analyze each interpretation SEPARATELY.
+    - Note the strengths, potential ambiguities and key details of each version.
+3. Elaborate:
+    - Ask yourself clarifying questions about ambiguous or complex segments.
+    - Provide detailed intermediate reasoning and potential implications.
+4. Validation and Comparison:
+    - Validate each interpretation not only for internal consistency but also against the key details.
+    - Compare the outcomes of all interpretations for completeness, clarity and alignment with the original goal.
+5. Selection:
+    - Identify the interpretation with the highest internal consistency and which interpretation is most accurate, coherent and aligned with the original goal.
+    - That selected interpretation becomes your final optimized query.
+
+**Final Output**:
+    - Include all different optimized interpretations under a key named "All_Interpretations" as a list.
+    - Present the final optimized query (from the chosen interpretation) in a separate key, "Optimized_Query".
+    - Provide the result STRICTLY as JSON, for example:
+
+    {
+      "All_Interpretations": [
+        "<interpretation_1>",
+        "<interpretation_2>",
+      ],
+      "Optimized_Query": "<chosen_final_query>"
+    }

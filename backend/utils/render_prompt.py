@@ -29,3 +29,15 @@ def load_and_render_prompt(prompt_path: str, context: Dict[str, Any] = None) -> 
         except Exception as e:
             logger.error("Failed to load or render prompt from %s: %s", prompt_path, e)
             raise
+
+def build_user_message(rendered_prompt: str) -> list:
+    """
+    Wrap the rendered prompt in a single 'user' message.
+
+    Parameters:
+        rendered_prompt (str): The fully rendered prompt text.
+
+    Returns:
+        list: A list containing one message dictionary.
+    """
+    return [{"role": "user", "content": rendered_prompt}]
