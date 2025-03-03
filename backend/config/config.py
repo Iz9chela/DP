@@ -1,3 +1,5 @@
+import os
+
 import yaml
 import logging
 from typing import Dict, Any
@@ -19,3 +21,18 @@ def load_config(filepath: str) -> Dict[str, Any]:
     except Exception as e:
         logger.error("Failed to load configuration file %s: %s", absolute_path, e)
         raise
+
+def get_api_key(provider: str, config: Dict[str, Any]) -> str:
+    """
+    Retrieves the API key for the given provider (e.g., 'openai' or 'claude') from the environment or config file.
+    """
+    provider = provider.lower()
+    env_var_name = f"{provider.upper()}_API_KEY"
+    api_key = os.getenv(env_var_name) or config.get("api_keys", {}).get(provider)
+
+    if not api_key:
+        logger.error("API key for %s not found.", provider)
+        raise ValueError(f"{provider} API key not provided.")
+
+    logger.info("Using API key for %s", provider)
+    return api_key

@@ -1,7 +1,9 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from datetime import datetime
+from dataclasses import dataclass, field
 
+@dataclass
 class PromptEvaluator(BaseModel):
     id: Optional[str] = Field(
         default=None,
@@ -18,13 +20,19 @@ class PromptEvaluator(BaseModel):
         description="The evaluation method used (e.g., 'human' or 'llm')",
         examples=["evaluator_human", "evaluator_llm"]
     )
+    provider: str = Field(
+        ...,
+        description="Which provider was chosen (e.g., openai, claude)",
+        examples=["openai", "claude"]
+    )
     model: str = Field(
         description="The AI model used for evaluation",
-        examples=["gpt-3.5-turbo", "gpt-4o"]
+        examples=["gpt-3.5-turbo", "gpt-4o", "claude-3-5-haiku-latest"]
     )
-    parsed_result: Dict[str, Any] = Field(
-        description="The evaluation result parsed as a JSON object",
-        examples=[{"prompt_rating": 7, "reasons": ["Clear objective", "Detailed instructions"]}]
+    parsed_result: dict = field(
+        default_factory=dict,
+        metadata={"description": "The evaluation result parsed as a JSON object"}
+
     )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,

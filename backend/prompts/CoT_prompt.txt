@@ -1,24 +1,26 @@
 **Input**: {{user_query}}
 
-**Step-by-step reasoning process**:
+**Dynamic reasoning process**:
 1. Comprehension:
-    - Read the entire query carefully, identifying possible ambiguities or incomplete information.
-2. Analyze:
-	- Identify the main goal and key components of the query.
-	- Understand the context and constraints of the query.
-	- Analyze the logical dependencies and required steps.
-3. Decompose:
-    - Break down the query into sequential logical steps.
-    - Analyze each step independently.
-    - When encountering ambiguous segments, propose reasonable assumptions or clarifications based on the available context.
-    - Ask yourself clarifying questions about any complexities or unclear points.
-4. Elaborate:
-    - Provide detailed, intermediate reasoning for each step.
-    - Expand on the implications, constraints and logical dependencies that come up.
-    - Incorporate any clarifications required by ambiguities.
+    - Carefully read the entire user query.
+    - Identify ambiguities, incomplete or missing information, potential conflicts and the user’s main goal.
+    - Examine the context, constraints and logical dependencies.
+2. Question and Hypothesis (Stage 1):
+    - Automatically generate MINIMUM 3 clarifying questions that arise about the query.
+    - Formulate hypotheses about possible interpretations or solutions.
+    - Determine what information or assumptions are needed to resolve uncertainties.
+3. Response and Enrichment (Stage 2):
+    - Answer the questions from Stage 1 with provisional or inferred details.
+    - Use those details to refine and sharpen the query.
+    - Summarize the partially improved query and check if more iteration is required.
+4. Iteration:
+    - If ambiguities still exist, return to Stage 1, ask more or deeper questions, answer them, then refine the query further.
+    - Continue iterating until the query is demonstrably free of unresolved factors, ambiguities.
+    - If all ambiguities are resolved and a clear goal is reached, move on to finalization.
 5. Synthesize:
-    - Combine the detailed steps into a coherent, enhanced version of the query.
-    - Verify that the query reflects the original goal with improved precision.
+    - Combine all validated insights and clarifications from the iterative loops.
+    - Confirm there are no contradictory statements, missing pieces, or vague goals.
+    - Verify the final refined query precisely captures the user’s intended outcome.
 
 **Final Output**:
     - Include your full chain of thought under the key "Chain_of_Thought".
@@ -26,6 +28,6 @@
     - Provide the result STRICTLY as JSON, for example:
 
     {
-        "Chain_of_Thought": "<the entire step-by-step analysis>",
+        "Chain_of_Thought": "<the entire iteration dialogue here>",
         "Optimized_Query": "<the final refined query>"
     }

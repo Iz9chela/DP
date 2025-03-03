@@ -2,9 +2,8 @@ import logging
 import sys
 from typing import Dict, Any, Optional
 
-# For demonstration, we assume these modules are available in your codebase:
 from backend.config.config import load_config
-from backend.llm_clients.clients import AIClient, OpenAIClient, get_api_key, AnthropicClient
+from backend.llm_clients.ai_client_factory import get_ai_client
 from backend.modules.evaluator_module import Evaluator
 from backend.utils.path_utils import resolve_path
 from backend.utils.render_prompt import load_and_render_prompt, build_user_message
@@ -20,7 +19,7 @@ class AutomatedRefinementModule:
 
     Attributes:
         user_query (str): The original query from the user.
-        client (AIClient): An AI client instance (e.g., OpenAIClient).
+        provider (str): The provider from the user.
         model (str): The model identifier to use.
         prompts (dict): Mapping of technique names -> their prompt template paths.
         max_iterations (int): Maximum number of optimization iterations (default: 3).
@@ -31,14 +30,15 @@ class AutomatedRefinementModule:
     def __init__(
         self,
         user_query: str,
-        client: AIClient,
+        provider: str,
         model: str,
         prompts: Dict[str, str],
         max_iterations: int = 3,
         hyperparams: Optional[dict] = None
     ):
         self.user_query = user_query
-        self.client = client
+        self.provider = provider
+        self.client = get_ai_client(provider)
         self.model = model
         self.prompts = prompts
         self.max_iterations = max_iterations
@@ -70,8 +70,8 @@ class AutomatedRefinementModule:
         # Decide which evaluator prompt to use (human or LLM). We'll assume "llm" here.
         # If you need a user toggle, parameterize it.
         evaluator = Evaluator(
-            input_prompt=query_text,
-            client=self.client,
+            prompt=query_text,
+            provider=self.provider,
             model=self.model,
             human_evaluation=use_human_eval,
             prompts=self.prompts
@@ -112,6 +112,7 @@ class AutomatedRefinementModule:
             rendered_prompt = load_and_render_prompt(technique_prompt_path, prompt_context)
             messages = build_user_message(rendered_prompt)
 
+            logger.info(f"Optimizing user query with technique '{selected_technique}'...")
             # Call the LLM
             response_content = self.client.call_chat_completion(
                 model=self.model,
@@ -198,22 +199,11 @@ if __name__ == "__main__":
     """
     logging.basicConfig(level=logging.INFO)
 
-    # Load config
-    CONFIG_PATH = resolve_path("config.yaml")
-    config = load_config(CONFIG_PATH)
+    config = load_config(resolve_path("config.yaml"))
 
     provider = config.get("provider", "openai")
-    api_key = get_api_key(provider, config)
-    if not api_key:
-        logger.error("No API key provided for provider: %s", provider)
-        sys.exit(1)
 
-    if provider.lower() == "openai":
-        client = OpenAIClient(api_key)
-    elif provider.lower() == "claude":
-        client = AnthropicClient(api_key)
-    else:
-        raise NotImplementedError(f"Provider '{provider}' not implemented.")
+    client = get_ai_client(provider)
 
     # Example model
     model = config["models"].get(provider, {}).get("default")
@@ -226,12 +216,14 @@ if __name__ == "__main__":
     user_query = input("Enter your query: ")
     refinement_module = AutomatedRefinementModule(
         user_query=user_query,
-        client=client,
+        provider=provider,
         model=model,
         prompts=prompts
     )
 
-    refinement_module.optimize_query(selected_technique="CoD", iterations=3)
+    res = refinement_module.optimize_query(selected_technique="CoT", iterations=3)
+    print("=== Final Result ===")
+    print(res)
     # Pick one technique among ["CoT", "SC", "CoD", "PC", "ReAct"]
     # chosen_technique = "CoT"
     # human_evaluation = True

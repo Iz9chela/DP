@@ -3,32 +3,10 @@ import logging
 
 import anthropic
 import openai
-import requests
-import json
-import os
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)
-
-
-def get_api_key(provider: str, config: Dict[str, Any]) -> str:
-    """
-    Retrieve the API key for the given provider (e.g., 'openai' or 'claude')
-    from an environment variable or configuration.
-    """
-    provider = provider.lower()
-    env_var_name = f"{provider.upper()}_API_KEY"
-    api_key = os.getenv(env_var_name)
-    if api_key:
-        logger.info("Using API key from environment variable for %s.", provider)
-        return api_key
-    elif "api_keys" in config and provider in config["api_keys"]:
-        logger.info("Using API key for %s from configuration file.", provider)
-        return config["api_keys"][provider]
-    else:
-        logger.error("API key for %s not found in environment variables or configuration.", provider)
-        raise ValueError(f"{provider} API key not provided.")
 
 
 class AIClient(ABC):
@@ -114,4 +92,3 @@ class AnthropicClient(AIClient):
                 time.sleep(sleep_time)
 
         raise Exception("Max retries exceeded for Anthropic (Claude) API call.")
-# Additional client implementations (e.g., for Claude, BERT) can be added here.

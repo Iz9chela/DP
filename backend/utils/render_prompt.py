@@ -6,38 +6,37 @@ from backend.utils.path_utils import resolve_path
 
 logger = logging.getLogger(__name__)
 
+def load_prompt(prompt_path: str) -> str:
+    """
+    Load a prompt from a file.
+    """
+    absolute_path = resolve_path(prompt_path)
+
+    if not os.path.exists(absolute_path):
+        logger.error("Prompt file not found: %s", absolute_path)
+        raise FileNotFoundError(f"Prompt file not found: {absolute_path}")
+
+    with open(absolute_path, "r", encoding="utf-8") as f:
+        return f.read().strip()
+
+def render_prompt(prompt_text: str, context: Dict[str, Any] = None) -> str:
+    """
+    Render a prompt using Jinja2 with the provided context.
+    """
+    if context:
+        template = Template(prompt_text)
+        return template.render(**context)
+    return prompt_text
+
 def load_and_render_prompt(prompt_path: str, context: Dict[str, Any] = None) -> str:
-        """
-        Load a prompt from a file and render it using Jinja2 if a context is provided.
-        """
-        try:
-            # Move up one directory before looking for 'prompts/'
-            absolute_path = resolve_path(prompt_path)
-
-            if not os.path.exists(absolute_path):
-                raise FileNotFoundError(f"Prompt file not found: {absolute_path}")
-
-            with open(absolute_path, "r", encoding="utf-8") as f:
-                prompt_text = f.read()
-            if context:
-                template = Template(prompt_text)
-                rendered = template.render(**context)
-                logger.info("Rendered prompt from %s with context.", prompt_path)
-                return rendered
-            logger.info("Loaded prompt from %s.", prompt_path)
-            return prompt_text.strip()
-        except Exception as e:
-            logger.error("Failed to load or render prompt from %s: %s", prompt_path, e)
-            raise
+    """
+    Load and render a prompt from a file.
+    """
+    prompt_text = load_prompt(prompt_path)
+    return render_prompt(prompt_text, context)
 
 def build_user_message(rendered_prompt: str) -> list:
     """
-    Wrap the rendered prompt in a single 'user' message.
-
-    Parameters:
-        rendered_prompt (str): The fully rendered prompt text.
-
-    Returns:
-        list: A list containing one message dictionary.
+    Wraps the rendered prompt in a standardized message format.
     """
     return [{"role": "user", "content": rendered_prompt}]

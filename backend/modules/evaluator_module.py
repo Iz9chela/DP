@@ -3,9 +3,9 @@ import logging
 import asyncio
 from typing import Dict, Any
 from backend.config.config import load_config
-from backend.llm_clients.clients import AIClient, OpenAIClient, get_api_key, AnthropicClient
+from backend.llm_clients.ai_client_factory import get_ai_client
+from backend.llm_clients.clients import AIClient
 from backend.utils.prompt_parser_validator import extract_json_from_response
-from backend.services.routers.prompt_evaluator_router import create_prompt_evaluation
 from backend.utils.path_utils import resolve_path
 from backend.utils.render_prompt import load_and_render_prompt, build_user_message
 
@@ -15,20 +15,21 @@ class Evaluator:
     """
     Evaluator class for assessing prompts using either human-defined or LLM evaluation criteria.
     """
-    def __init__(self, input_prompt: str, client: AIClient, model: str,
+    def __init__(self, prompt: str, provider: str, model: str,
                  human_evaluation: bool = False, prompts: Dict[str, str] = None) -> None:
         """
         Initialize the Evaluator.
 
         Parameters:
-            input_prompt (str): The prompt to evaluate.
-            client (AIClient): An instance of an AI client (e.g., OpenAIClient).
+            prompt (str): The prompt to evaluate.
+            provider (str): The name of the provider.
             model (str): The model identifier to use for evaluation.
             human_evaluation (bool): Whether to use human-defined evaluation criteria.
             prompts (Dict[str, str]): A dictionary of prompt file paths.
         """
-        self.input_prompt = input_prompt
-        self.client = client
+        self.prompt = prompt
+        self.provider = provider
+        self.client: AIClient = get_ai_client(provider)
         self.model = model
         self.human_evaluation = human_evaluation
         self.prompts = prompts or {}
@@ -44,7 +45,7 @@ class Evaluator:
             raise ValueError("Prompt path for key '%s' not provided in configuration." % prompt_key)
 
         prompt_context = {
-            "user_query": self.input_prompt
+            "user_query": self.prompt
         }
 
         rendered_prompt = load_and_render_prompt(prompt_path, prompt_context)
@@ -55,18 +56,7 @@ class Evaluator:
         response_content = self.client.call_chat_completion(self.model, messages)
         self.result = extract_json_from_response(response_content)
 
-        # Build a record to store
-        evaluation_data = {
-            "prompt": self.input_prompt,
-            "evaluation_method": prompt_key,
-            "model": self.model,
-            "parsed_result": self.result,
-            # created_at, updated_at, and is_deleted are handled in the router
-        }
-
-        # Create document in MongoDB
-        saved_record = await create_prompt_evaluation(evaluation_data)
-        return saved_record
+        return self.result
 
 
 if __name__ == "__main__":
@@ -74,31 +64,18 @@ if __name__ == "__main__":
         import sys
         logging.basicConfig(level=logging.INFO)
 
-        CONFIG_PATH = resolve_path("config.yaml")
-        config = load_config(CONFIG_PATH)
+        config = load_config(resolve_path("config.yaml"))
 
         provider = config.get("provider", "openai")
-        open_api_key = get_api_key(provider, config)
-        if not open_api_key:
-            logger.error("No API key provided for provider: %s", provider)
-            sys.exit(1)
 
-        if provider.lower() == "openai":
-            client = OpenAIClient(open_api_key)
-        elif provider.lower() == "claude":
-            client = AnthropicClient(open_api_key)
-        else:
-            logger.error("Provider %s not implemented.", provider)
-            sys.exit(1)
-
-        model = config["models"].get(provider, {}).get("default")
+        model = config["models"].get(provider, {}).get("gpt-3.5-turbo")
         if not model:
             logger.error("No default model specified for provider %s in configuration.", provider)
             sys.exit(1)
 
         prompts = config.get("prompts", {})
 
-        input_prompt = input("Enter prompt to evaluate: ").strip()
+        prompt = input("Enter prompt to evaluate: ").strip()
         evaluation_method = input("Choose evaluation method ('human' or 'llm'): ").strip().lower()
         if evaluation_method not in ['human', 'llm']:
             print("Invalid choice! Please enter 'human' or 'llm'.")
@@ -106,8 +83,8 @@ if __name__ == "__main__":
         human_evaluation = (evaluation_method == "human")
 
         evaluator = Evaluator(
-            input_prompt=input_prompt,
-            client=client,
+            prompt=prompt,
+            provider=provider,
             model=model,
             human_evaluation=human_evaluation,
             prompts=prompts

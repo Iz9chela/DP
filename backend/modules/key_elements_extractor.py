@@ -2,7 +2,9 @@ import json
 import logging
 import sys
 import asyncio
-from backend.llm_clients.clients import OpenAIClient, get_api_key, AnthropicClient
+
+from backend.llm_clients.ai_client_factory import get_ai_client
+from backend.llm_clients.clients import AIClient
 from backend.config.config import load_config
 from backend.utils.path_utils import resolve_path
 from backend.utils.prompt_parser_validator import extract_json_from_response
@@ -25,7 +27,7 @@ class KeyExtractor:
     }
     """
 
-    def __init__(self, user_query: str, client: OpenAIClient, model: str, prompts: dict):
+    def __init__(self, user_query: str, client: AIClient, model: str, prompts: dict):
         self.user_query = user_query
         self.client = client
         self.model = model
@@ -57,35 +59,19 @@ if __name__ == "__main__":
         # Configure logging
         logging.basicConfig(level=logging.INFO)
 
-        # Load configuration from YAML file
-        CONFIG_PATH = resolve_path("config.yaml")
-        config = load_config(CONFIG_PATH)
+        config = load_config(resolve_path("config.yaml"))
 
         # Determine provider from configuration
         provider = config.get("provider", "openai")
 
-        # Retrieve the API key (environment variable takes precedence)
-        open_api_key = get_api_key(provider, config)
-        if not open_api_key:
-            logger.error("No API key provided for provider: %s", provider)
-            sys.exit(1)
-
-        # Instantiate the appropriate AI client based on provider
-        if provider.lower() == "openai":
-            client = OpenAIClient(open_api_key)
-        elif provider.lower() == "claude":
-            client = AnthropicClient(open_api_key)
-        else:
-            logger.error("Provider %s not implemented.", provider)
-            sys.exit(1)
+        client = get_ai_client(provider)
 
         # Get the model from configuration; for example, use the key 'gpt-4o'
-        model = config["models"].get(provider, {}).get("default")
+        model = config["models"].get(provider, {}).get("gpt-3.5-turbo")
         if not model:
             logger.error("No default model specified for provider %s in configuration.", provider)
             sys.exit(1)
 
-        # Get prompt file paths from configuration (including our key_extraction prompt)
         prompts = config.get("prompts", {})
 
         # Get the user query for which key elements need to be extracted

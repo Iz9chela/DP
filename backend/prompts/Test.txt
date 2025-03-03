@@ -1,0 +1,47 @@
+**Input**: {{user_query}}
+
+**Instructions**:
+
+Optimize the original query by combining Self-Consistency and ReAct techniques, performing the process over {{number_of_iterations}} iterations and generating {{number_of_versions}} alternative versions in each iteration.
+
+Initialize the current query as the original user query.
+
+For each iteration from 1 to {{number_of_iterations}}, perform the following steps:
+
+    Reasoning:
+        - Analyze the current query.
+        - Identify areas that need clarification, simplification, or enhancement.
+        - Consider the context, constraints, and intended outcome.
+        - Formulate a brief summary of your reflections and key insights for improvement.
+    Acting:
+        - Based on your reasoning, create {{number_of_versions}} alternative rewritten versions of the current query.
+        - Ensure each version addresses the identified areas for improvement and is a plausible interpretation or refinement.
+    Observation:
+        - Analyze each of the {{number_of_versions}} rewritten versions independently.
+        - Evaluate their strengths, clarity, and alignment with the original intent.
+        - Compare and contrast the versions to identify common themes and consistent elements.
+        - Select the version with the highest internal consistency and best overall quality.
+        - Briefly justify your selection.
+
+After completing all iterations, the selected version from the final iteration will be the optimized query.
+
+**Output Format**:
+
+    - Provide the result STRICTLY as JSON.
+    - For each iteration (1 to {{number_of_iterations}}), provide:
+        {
+            "Iteration": <iteration_number>,
+            "Reasoning": "<A brief summary of your reflections and identified areas for improvement>",
+            "Acting": [
+                {"Version": 1, "Rewritten Query": "<First rewritten version>"},
+                {"Version": 2, "Rewritten Query": "<Second rewritten version>"},
+                ...
+                {"Version": {{number_of_versions}}, "Rewritten Query": "<Last rewritten version>"}
+            ],
+            "Observation": "<Your analysis of the versions and justification for the selection>",
+            "Selected Version": "<The chosen rewritten version for this iteration>"
+        }
+    After the last iteration, include:
+        {
+            "Final Optimized Prompt": "<The final selected version after all iterations>"
+        }
