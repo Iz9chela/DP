@@ -1,5 +1,7 @@
 provider: "openai"
 
+auth_secret_key: "VQ2MfKMyZH5yFRXwluE5WTRZhvP24BD1"
+
 api_keys:
   openai: "api_key1"
   claude: "api_key2"

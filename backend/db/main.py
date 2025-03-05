@@ -1,4 +1,5 @@
 from backend.db.routers import prompt_evaluator_router
+from backend.db.routers.user_router import router as user_router
 
 import uvicorn
 import logging
@@ -31,6 +32,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
+app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(prompt_evaluator_router.router, prefix="/evaluations", tags=["Evaluations"])
 app.include_router(optimized_router, prefix="/optimizations", tags=["Optimized Prompts"])
 

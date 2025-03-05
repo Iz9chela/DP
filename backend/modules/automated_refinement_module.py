@@ -1,6 +1,7 @@
 import logging
 import sys
-from typing import Dict, Any, Optional
+import random
+from typing import Dict, Any, Optional, List
 
 from backend.config.config import load_config
 from backend.llm_clients.ai_client_factory import get_ai_client
@@ -11,6 +12,17 @@ from backend.utils.prompt_parser_validator import extract_json_from_response
 
 logger = logging.getLogger(__name__)
 
+emotional_stimuli_list = [
+    "Write your answer and give me a confidence score between 0-1 for your answer.",
+    "This is very important to my career.",
+    "You'd better be sure.",
+    "Stay focused and dedicated to your goals. Your consistent efforts will lead to outstanding achievements.",
+    "Take pride in your work and give it your best. Your commitment to excellence sets you apart.",
+    "Remember that progress is made one step at a time. Stay determined and keep moving forward.",
+    "You'd better be sure.",
+    "Are you sure?",
+    "Are you sure that's your final answer? It might be worth taking another look."
+]
 
 class AutomatedRefinementModule:
     """
@@ -50,11 +62,35 @@ class AutomatedRefinementModule:
             "presence_penalty": 0,
             "stop_sequences": []
         }
+        self.expert: Optional[str] = None
+        self.emotional_stimuli = emotional_stimuli_list
 
         # Tracking
         self.final_optimized_query: str = ""
         self.optimized_output: Dict[str, Any] = {}
         self.is_optimizing: bool = False  # Simple concurrency lock
+
+    def add_expert_persona(self):
+        """
+        Inserts the persona text at the *start* of the final optimized prompt.
+        """
+        expert_text = f"You are a {self.expert} with extensive experience."
+
+        if not self.final_optimized_query:
+            self.final_optimized_query = expert_text
+        else:
+            self.final_optimized_query = f"{expert_text}\n{self.final_optimized_query}"
+
+    def add_emotional_stimuli(self):
+        """
+        Appends an emotional stimulus text at the *end* of the final optimized prompt.
+        """
+        emotion_text = random.choice(self.emotional_stimuli)
+
+        if not self.final_optimized_query:
+            self.final_optimized_query = emotion_text
+        else:
+            self.final_optimized_query += f"\n{emotion_text}"
 
     async def evaluate_query(self, use_human_eval: bool, query_text: str) -> Dict[str, Any]:
         """

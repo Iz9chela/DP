@@ -30,16 +30,20 @@ class OpenAIClient(AIClient):
         """
         Call the OpenAI chat completion API with retry logic.
         """
+        params = {
+            "model": model,
+            "temperature": 0.0,
+            "messages": messages
+        }
         attempt = 0
         while attempt < self.max_retries:
             try:
                 start_time = time.time()
-                response = self.client.chat.completions.create(
-                    model=model,
-                    max_tokens=1024,
-                    temperature=0.0,
-                    messages=messages
-                )
+                if model == "o1-preview":
+                    params["max_completion_tokens"] = 2048
+                else:
+                    params["max_tokens"] = 1024
+                response = self.client.chat.completions.create(**params)
                 result = response.choices[0].message.content.strip()
                 elapsed_time = time.time() - start_time
                 logger.info("Received response from AI model. AI API call took %.2f seconds", elapsed_time)

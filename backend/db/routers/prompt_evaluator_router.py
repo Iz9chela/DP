@@ -1,11 +1,12 @@
 import logging
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Depends
 
 from backend.db.data.prompt_evaluator_data import PromptEvaluator
 from backend.db.db import get_database
 from backend.db.service.prompt_evaluation_service import create_prompt_evaluation, get_prompt_evaluation, \
     list_prompt_evaluations, update_prompt_evaluation, delete_prompt_evaluation
+from backend.utils.auth_dependency import get_current_user
 
 from backend.utils.http_error_handler import handle_generic_exception
 
@@ -23,7 +24,8 @@ async def create_evaluation_endpoint(
             "model": "gpt-3.5-turbo",
             "evaluation_method": "human",
         }]
-        )
+        ),
+        user_id: str = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
     Inserts a new document into the 'prompt_evaluator' collection.
@@ -77,6 +79,7 @@ async def update_evaluation_endpoint(
             }
         }]
     ),
+        user_id: str = Depends(get_current_user)
 ) -> Optional[Dict[str, Any]]:
     """
     Updates an existing evaluation document by id, returning the updated document.
@@ -91,6 +94,7 @@ async def update_evaluation_endpoint(
 @router.delete("/{evaluation_id}")
 async def delete_evaluation_endpoint(
         evaluation_id: str,
+        user_id: str = Depends(get_current_user)
 ) -> bool:
     """
     Soft-deletes a document by setting is_deleted=True.
