@@ -1,32 +1,50 @@
 **Input**: {{user_query}}
 
 **Instructions**:
-Iteratively refine and optimize the original query using the ReAct technique over {{number_of_iterations}} iterations.
-In each iteration, perform the following steps:
+Use the Reasoning+Action+Observation (ReAct) approach to optimize the input query explicitly over {{number_of_iterations}} iterations.
+Each iteration explicitly involves reasoning about the query, take action based on this reasoning, observe the results and then use these observations to inform the next cycle of reasoning.
+Clearly summarize each step, passing context explicitly forward between iterations.
 
-Step 1: Reasoning
-    - Reflect on the query, considering constraints, context, and any relevant background knowledge.
-    - Identify the next step or piece of information needed.
-    - Keep the reasoning concise; if the iteration count is large, summarize significant changes from previous iterations rather than repeating extensive details.
+**Dynamic Iterative Process**:
+Step 1. Reasoning:
+    - Carefully read and fully comprehend the user's query.
+    - Identify ambiguities, incomplete details, potential contradictions, context, constraints and the user's intended goal.
+    - Summarize your explicit reasoning clearly for the action step.
+Step 2. Action:
+    - Explicitly take actions based on your reasoning. Actions involve consulting external or public resources for clarification, verification, or enrichment.
+    - Clearly document each explicit action taken.
+    - Explicitly summarize your actions clearly for the observation step.
+Step 3. Observation:
+    - Explicitly document observations resulting from the actions taken.
+    - Clearly evaluate how actions improved or impacted the query.
+    - Explicitly summarize your observations clearly as context for the next iteration.
+Step 4. Final Synthesis:
+	- Explicitly integrate reasoning, actions, and observations from all cycles into a coherent, fully optimized query.
+	- Explicitly confirm there are no contradictions or unresolved issues.
+    - Clearly summarize explicitly the final optimized query.
 
-Step 2: Acting
-    - Rewrite the query based on your reasoning.
-    - Simplify language, remove redundancies and ensure all critical elements are clear.
-    - Make the query self-contained and precisely aligned with the intended task or outcome.
-
-Step 3: Observation
-    - Review the refined query to ensure it aligns with the initial objectives.
-    - Verify that the updated query correctly implements the key insights from the reasoning step.
-    - If needed, incorporate additional adjustments directly into the query (within the same iteration).
-    - Be mindful of verbosity: highlight only major improvements in your observation rather than re-describing every minor detail.
+**Guidelines**:
+	• Each iteration explicitly integrates external knowledge to enhance accuracy.
+	• Explicitly aim to avoid hallucinations and error propagation by revisiting earlier reasoning steps whenever needed.
+    • Explicitly maintain clear context and integrate each step to facilitate an adaptive and reflective reasoning process.
 
 **Output Format**:
-    - Provide the result STRICTLY as JSON.
-    - For each iteration (1 to {{number_of_iterations}}), produce an object with the following keys:
-         {
-           "Iteration": <iteration_number>,
-           "Reasoning": "<Concise summary of analysis and key insights>",
-           "Action": "<The rewritten query for that iteration>",
-           "Observation": "<Brief evaluation of the changes made>"
-         }
-    - After the last iteration, present the **Optimized_Query** as a single JSON key-value pair.
+    - Your response must STRICTLY adhere to JSON format provided below. No additional explanations or text outside the JSON structure are permitted.
+    - Provide a STRICTLY JSON example:
+{
+  "ReAct_Iterations": [
+    {
+      "Iteration": 1,
+      "Reasoning": "<Explicit summary of reasoning>",
+      "Action": "<Explicit summary of actions taken>",
+      "Observation": "<Explicit summary of observations>"
+    },
+    {
+      "Iteration": "X",
+      "Reasoning_Summary": "<Explicit summary of reasoning>",
+      "Action_Refinements": "<Explicit summary of actions taken>",
+      "Observation_Evaluation": "<Explicit summary of observations>"
+    }
+  ],
+  "Final_Optimized_Query": "<Clearly synthesized and optimized final query based on all iterations>"
+}

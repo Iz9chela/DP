@@ -68,6 +68,47 @@ async def create_prompt_evaluation(evaluation_data: Dict[str, Any]) -> Dict[str,
 
     return doc
 
+async def create_comparison(evaluation_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Inserts a new prompt evaluation into the database, validates input, and performs AI comparison.
+    """
+    # Validate input data
+    required_fields = ["prompt", "provider", "model", "optimized_prompt"]
+    validate_required_fields(evaluation_data, required_fields)
+    validate_provider_and_model(evaluation_data["provider"], evaluation_data["model"])
+
+    db = get_database()
+
+    # Perform evaluation using AI
+    provider = evaluation_data["provider"]
+    evaluator = Evaluator(
+        prompt=evaluation_data["prompt"],
+        provider=provider,
+        model=evaluation_data["model"],
+        prompts=config.get("prompts", {}),
+        optimized_prompt = evaluation_data["optimized_prompt"]
+    )
+
+    evaluation_result = await evaluator.compare()
+    evaluation_data["parsed_result_after_comparison"] = evaluation_result
+    evaluation_data["created_at"] = datetime.utcnow()
+    evaluation_data["updated_at"] = datetime.utcnow()
+    evaluation_data["is_deleted"] = False
+
+    # Prepare document
+    p_model = PromptEvaluator.model_validate(evaluation_data)
+    doc = p_model.model_dump(by_alias=True)
+    doc.pop("_id", None)
+
+    # Insert into MongoDB
+    result = await db.prompt_evaluator.insert_one(doc)
+
+    doc.pop("_id", None)
+    doc["id"] = str(result.inserted_id)
+    logger.info("Created new prompt comparison with _id: %s", result.inserted_id)
+
+    return doc
+
 async def get_prompt_evaluation(evaluation_id: str) -> Dict[str, Any]:
     """
     Retrieves a prompt evaluation document by ID.

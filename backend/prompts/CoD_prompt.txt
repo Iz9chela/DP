@@ -1,36 +1,51 @@
 **Input**: {{user_query}}
 
 **Instructions**:
-You will generate a series concise and entity-dense optimized versions of the input query over {{number_of_iterations}} iterations.
-Perform the following 2 steps in each iteration:
+You will generate a series of concise, context-aware and entity-dense optimized versions of the input query over {{number_of_iterations}} iterations.
+Explicitly pass context forward by summarizing and incorporating improvements iteratively.
 
-Step 1: Identify Improvement Opportunities
-    - Extract 1–3 concise improvement points (separated by ";") that address aspects such as clarity, precision, or relevance missing from the previous version.
+Step 1: Initial Analysis
+    - Comprehensively analyze the initial query.
+    - Identify clearly aspects such as clarity, precision, relevance, and entity-density that could benefit from improvement.
+    - Summarize explicitly your analysis as context for the next step.
+
+**Iterative Process** (Repeat for each iteration):
+Step 2: Identify Improvement Opportunities
+    - Extract 1–3 concise improvement points (separated by ";") that address aspects such as clarity, entity density,
+     precision, or relevance missing from the previous version.
     - An improvement point should be:
         • Relevant to the core subject.
         • Specific and concise (5 words or fewer).
-        • Novel (not present in the previous version).
-        • Accurate and faithful to the original input.
+        • Be novel compared to the previous iteration.
+        • Preserve accuracy and remain faithful to the original intent.
         • Integrated at any suitable point in the text.
 
-Step 2: Create a Denser, Optimized Query
-    - Rewrite the query, closely preserving or slightly expanding its word count:
-        • If genuinely important details must be added, minimal expansion of the overall word count is allowed.
-        • Otherwise, aim to maintain or even reduce word count by removing redundant text.
-    - Incorporate every essential detail from the earlier version plus the identified improvements.
-    - Avoid dropping critical context, even if it means minor increases in length.
+Step 3: Create a Denser, Optimized Query
+    - Rewrite explicitly the query preserving essential context and incorporating all improvements from the current iteration.
+    - Maintain or slightly adjust word count:
+        • Minimal expansion allowed only if critical details must be preserved.
+        • Avoid dropping critical context, even if it means minor increases in length.
+        • Otherwise, aim explicitly for conciseness by removing redundancy.
+    - Explicitly summarize your optimized query clearly as context for the next iteration.
 
 **Guidelines**:
-    - The first version may be moderately verbose, exposing potential areas for improvement.
-    - With each iteration, remove redundancies and streamline language, prioritizing clarity and precision.
-    - Each iteration should add novel improvements, it must not conflict with the original intent or lose critical information.
-    - If space constraints interfere with preserving important content, expand slightly rather than omitting key points.
+    - The first iteration explicitly starts moderately verbose to highlight improvement opportunities.
+    - Each subsequent iteration should add novel improvements, it must not conflict with the original intent or lose critical information.
+    - Preserve critical information explicitly, allowing minimal expansion if necessary.
 
 **Output Format**:
- - Provide a STRICTLY JSON list of {{number_of_iterations}} objects.
-    - Each object must have:
-      {
-         "Improvement_Opportunities": "improvement1; improvement2; ...",
-         "Optimized_Query": "..."
-      }
-    - The "Optimized_Query" can be the same length or slightly longer/shorter than the previous version, depending on the needed changes.
+    - Your response must STRICTLY adhere to JSON format provided below. No additional explanations or text outside the JSON structure are permitted.
+    - Provide a STRICTLY JSON of {{number_of_iterations}} objects:
+{
+    "All_Densities": [
+        {
+            "Improvement_Opportunities": "improvement1; improvement2; ...",
+            "Optimized_Query": "<optimized query version after iteration 1>"
+        },
+        {
+            "Improvement_Opportunities": "improvement1; improvement2; ...",
+            "Optimized_Query": "<optimized query version after iteration X>"
+        }
+    ],
+    "Final_Optimized_Query": "<last optimized query version>"
+}

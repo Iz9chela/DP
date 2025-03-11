@@ -1,33 +1,41 @@
 **Input**: {{user_query}}
 
+**Instructions**:
+Use a structured and dynamic Chain-of-Thought approach, explicitly preserving context by providing a brief summary after each step.
+Pass these summaries forward throughout the reasoning process.
+
 **Dynamic reasoning process**:
-1. Comprehension:
-    - Carefully read the entire user query.
-    - Identify ambiguities, incomplete or missing information, potential conflicts and the user’s main goal.
-    - Examine the context, constraints and logical dependencies.
-2. Question and Hypothesis (Stage 1):
-    - Automatically generate MINIMUM 3 clarifying questions that arise about the query.
-    - Formulate hypotheses about possible interpretations or solutions.
-    - Determine what information or assumptions are needed to resolve uncertainties.
-3. Response and Enrichment (Stage 2):
-    - Answer the questions from Stage 1 with provisional or inferred details.
-    - Use those details to refine and sharpen the query.
-    - Summarize the partially improved query and check if more iteration is required.
-4. Iteration:
-    - If ambiguities still exist, return to Stage 1, ask more or deeper questions, answer them, then refine the query further.
-    - Continue iterating until the query is demonstrably free of unresolved factors, ambiguities.
-    - If all ambiguities are resolved and a clear goal is reached, move on to finalization.
-5. Synthesize:
-    - Combine all validated insights and clarifications from the iterative loops.
+Step 1. Comprehension:
+    - Carefully read and fully comprehend the user's query.
+    - Identify ambiguities, incomplete details, potential contradictions, context, constraints and the user's intended goal.
+    - Provide a clear summary of comprehension to pass as context to the next step.
+Step 2. Clarifications and Hypothesis Generation:
+    - Explicitly list ambiguities or unclear parts from the comprehension summary.
+    - Formulate clarifying questions and provisional assumptions explicitly.
+    - Summarize clarifications and hypotheses clearly for the next step.
+Step 3. Response and Query Refinement:
+    - Answer each clarifying question explicitly using inferred or hypothetical details as needed.
+    - Clearly document the impact of these answers on refining the query.
+    - Summarize this refined query clearly to pass as context for iterative checks.
+Step 4. Iterative Refinement Check:
+    - Check explicitly for remaining ambiguities or incomplete information using provided summaries.
+    - If issues remain, explicitly summarize what is missing and iterate back to Step 2 for further clarification.
+    - If fully resolved, explicitly confirm completion and summarize clearly to move to synthesis.
+Step 5. Synthesize:
+    - Combine explicitly all validated summaries to form a coherent, complete and optimized query.
     - Confirm there are no contradictory statements, missing pieces, or vague goals.
-    - Verify the final refined query precisely captures the user’s intended outcome.
+    - Provide a final synthesis summary clearly stating that the query is fully optimized and complete.
 
-**Final Output**:
-    - Include your full chain of thought under the key "Chain_of_Thought".
-    - Include the final refined version of the query under the key "Optimized_Query".
-    - Provide the result STRICTLY as JSON, for example:
-
-    {
-        "Chain_of_Thought": "<the entire iteration dialogue here>",
-        "Optimized_Query": "<the final refined query>"
-    }
+**Output Format**:
+    - Your response must STRICTLY adhere to JSON format provided below. No additional explanations or text outside the JSON structure are permitted.
+{
+  "Chain_of_Thought": "<Complete detailed reasoning explicitly documented from comprehension through synthesis>",
+  "Stepwise_Summaries": [
+    {"Step 1 - Comprehension": "<Summary to maintain context>"},
+    {"Step 2 - Clarifications and Hypotheses": "<Clarifications and provisional assumptions summary>"},
+    {"Step 3 - Response and Enrichment": "<Summary of refined query after answering clarifications>"},
+    {"Step 4 - Iterative Refinement": "<Summary of each iterative refinement step, if applicable>"},
+    {"Step 5 - Final Synthesis": "<Final synthesis explicitly confirming full query optimization>"}
+  ],
+  "Final_Optimized_Query": "<the final refined query>"
+}

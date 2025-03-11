@@ -1,0 +1,83 @@
+Input: {{user_query}}
+
+Instructions:
+Use a structured and dynamic approach combining Self-Consistency (SC) and Reasoning+Action+Observation (ReAct).
+You will explicitly generate {{number_of_iterations}} interpretations of the query, performing iterative cycles of reasoning, action, and observation for each interpretation.
+Maintain clear context explicitly through summarization after each step.
+
+**Dynamic Iterative Process per Interpretation**:
+Step 1. Comprehension and Interpretation Generation:
+    - Carefully read and fully comprehend the user's query.
+    - Identify ambiguities, incomplete details, potential contradictions, context, constraints and the user's intended goal.
+    - Explicitly generate {{number_of_versions}} distinct interpretations.
+    - Clearly summarize each interpretation explicitly for context.
+
+For each interpretation perform explicitly:
+Step 2. Reasoning:
+    - For each interpretation, explicitly reason about ambiguities, missing details, and optimization opportunities.
+    - Summarize your explicit reasoning clearly for the action step.
+Step 3. Action:
+    - Take explicit actions based on your reasoning, explicitly involving external or public resources for clarification, verification, or enrichment.
+    - Clearly document explicit actions.
+    - Explicitly summarize your actions clearly for the observation step.
+Step 4. Observation:
+    - Explicitly document observations resulting from actions taken.
+    - Clearly evaluate how actions impacted and improved the interpretation.
+    - Explicitly summarize your observations clearly as context for iterative refinements.
+Repeat Steps 2-4 iteratively if ambiguities remain unresolved, explicitly summarizing each cycle.
+Step 5. Consistency Evaluation and Final Synthesis:
+    - Evaluate explicitly each interpretation for consistency, reliability, and clarity based on all iterations.
+    - Select explicitly the most consistent and reliable interpretation.
+    - Clearly summarize your selection and explicitly state the final optimized query.
+
+**Guidelines**:
+	- Explicitly integrate external knowledge to enhance accuracy in each iteration.
+	- Explicitly avoid hallucinations and error propagation by revisiting earlier reasoning, actions, or observations as needed.
+    - Maintain explicit context and clearly summarize each step to facilitate adaptive, reflective reasoning.
+
+
+**Output Format**:
+    - Your response must STRICTLY adhere to JSON format provided below. No additional explanations or text outside the JSON structure are permitted.
+    - Provide a STRICTLY JSON example:
+{
+  "Interpretations": [
+    {
+      "Interpretation": "<Interpretation 1 description>",
+      "Iterations": [
+        {
+          "Iteration": 1,
+          "Reasoning": "<Explicit reasoning summary>",
+          "Action": "<Explicit actions taken summary>",
+          "Observation": "<Explicit observations summary>"
+        },
+        {
+          "Iteration": "X",
+          "Reasoning": "<Explicit reasoning summary>",
+          "Action": "<Explicit actions taken summary>",
+          "Observation": "<Explicit observations summary>"
+        }
+      ],
+      "Optimized_Query": "<Optimized query from interpretation 1>"
+    },
+    {
+      "Interpretation": "<Interpretation X description>",
+      "Iterations": [
+        {
+          "Iteration": 1,
+          "Reasoning": "<Explicit reasoning summary>",
+          "Action": "<Explicit actions taken summary>",
+          "Observation": "<Explicit observations summary>"
+        },
+        {
+          "Iteration": "X",
+          "Reasoning": "<Explicit reasoning summary>",
+          "Action": "<Explicit actions taken summary>",
+          "Observation": "<Explicit observations summary>"
+        }
+      ],
+      "Optimized_Query": "<Optimized query from interpretation X>"
+    }
+  ],
+  "Final_Synthesis": "<Explicit summary of the most consistent and reliable interpretation>",
+  "Final_Optimized_Query": "<Clearly synthesized and optimized final query based on all interpretations and iterations>"
+}

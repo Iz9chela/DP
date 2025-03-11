@@ -34,6 +34,20 @@ class PromptEvaluator(BaseModel):
         metadata={"description": "The evaluation result parsed as a JSON object"}
 
     )
+    parsed_result_after_comparison: dict = field(
+        default_factory=dict,
+        metadata={"description": "The comparison result parsed as a JSON object"}
+
+    )
+    result_verdict: str = Field(
+        description="User feedback after prompt comparison",
+        examples=["Worse", "Tie", "Better"]
+    )
+    optimized_prompt: Optional[str] = Field(
+        default=None,
+        description="Prompt for comparison to original prompt",
+        examples=["Create a enhanced snake game in Python with many examples."]
+    )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
         description="Timestamp when the evaluation was created"

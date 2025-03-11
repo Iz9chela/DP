@@ -1,46 +1,46 @@
 **Input**: {{user_query}}
 
 **Instructions**:
-You will iteratively optimize the original query through a chain of refinement.
+Use the Prompt-Chaining approach to optimize the input query explicitly. Break down the query into smaller, manageable subtasks, clearly chaining the results from each subtask into the subsequent query.
+Explicitly maintain context by summarizing the outcome after each step, passing this forward clearly to the next subtask.
 
-**Iteration Steps**:
-1. Analysis and Decomposition:
-   - Identify the main objective of the query.
-   - Identify ambiguous or redundant phrases and elements.
-   - Break the user query into smaller, more specific sub-queries.
+Step 1. Task Decomposition:
+    - Analyze comprehensively the user's query.
+    - Explicitly break down the complex task into clearly defined, manageable subtasks.
+    - Provide a brief and explicit summary of each identified subtask.
 
-2. Refinement Loops:
-   - Repeat the refinement process {{number_of_iterations}} times.
-   - Refine Each Sub-Query:
-        • Re-check the context, constraints and relevant details.
-        • Rewrite the sub-query to ensure maximum clarity and specificity.
-        • Validate logic and consistency; correct if needed.
-   - Each sub-query can undergo multiple mini-loops of refining → validating → rewriting
-   - **Stopping Criteria**:
-       • If the sub-query is sufficiently clear and concise.
-       • If further refinements only add minimal or repetitive changes.
-       • If you reach a preset maximum iteration count.
+**Iterative Process** (Repeat for each subtask):
+Step 2. Solve Subtask:
+    - Explicitly address each subtask individually, focusing on clearly defined objectives.
+    - Provide explicit reasoning and outcomes for the subtask.
+    - Clearly summarize the output of each subtask as context for the next subtask.
+Step 3. Context Integration:
+    - Explicitly integrate outputs from previous subtasks into the next subtask.
+    - Ensure continuity and explicitly reference prior outputs to maintain clarity and prevent redundancy.
+    - Clearly document context integration for each iteration.
+Step 4. Synthesize:
+    - Explicitly combine all outputs from completed subtasks into a cohesive, complete, and optimized final query.
+    - Clearly ensure there are no contradictions, omissions, or unresolved issues.
+    - Explicitly summarize the final synthesis clearly confirming completeness and optimization.
 
-3. Chain the Sub-Queries:
-   - Arrange the refined sub-queries in a logical sequence: sub-query 1 → sub-query 2 → sub-query 3, etc.
-   - Merge them into one coherent flow.
-   - Remove any redundant statements or overlapping points.
-
-4. Optimized query construction:
-   - Draft a single, unified query that incorporates every refined sub-query.
-   - Ensure clarity, completeness, and cohesion.
-   - Eliminate any unnecessary filler or ambiguous wording.
-
-5. Final Verification:
-   - Confirm the query fully addresses the user’s original query.
-   - Make sure no statements are contradictory.
-   - Verify that the query is understandable without additional context.
+**Guidelines**:
+    - Each subtask must explicitly build upon the context provided by previous subtasks.
+    - Clearly maintain continuity and clarity of reasoning throughout each iteration.
+    - Allow slight expansions only if necessary to preserve critical context or information.
 
 **Output Format**:
-   - Provide the result STRICTLY as JSON.
-   - For each iteration (1 to {{number_of_iterations}}), provide:
-     {
-        "Changes": "<brief_summary_of_modifications>"
-        "Optimized_Sub_Query": "<refined_sub-query_text>",
-     }
-   - After the last iteration, present the **Optimized_Query** as a single JSON key-value pair.
+    - Your response must STRICTLY adhere to the JSON format provided below. No additional explanations or text outside the JSON structure are permitted.
+    - Provide a STRICTLY JSON example:
+{
+    "Query_Chaining_Process": [
+        {
+            "Subtask": "Description of Subtask 1",
+            "Subtask_Result": "Result and summary of subtask 1"
+        },
+        {
+            "Subtask": "Description of Subtask X",
+            "Subtask_Result": "Result and summary of subtask X"
+        }
+    ],
+    "Final_Optimized_Query": "<Final synthesized and optimized query>"
+}

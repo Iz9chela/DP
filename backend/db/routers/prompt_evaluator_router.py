@@ -5,7 +5,7 @@ from fastapi import APIRouter, Body, Depends
 from backend.db.data.prompt_evaluator_data import PromptEvaluator
 from backend.db.db import get_database
 from backend.db.service.prompt_evaluation_service import create_prompt_evaluation, get_prompt_evaluation, \
-    list_prompt_evaluations, update_prompt_evaluation, delete_prompt_evaluation
+    list_prompt_evaluations, update_prompt_evaluation, delete_prompt_evaluation, create_comparison
 from backend.utils.auth_dependency import get_current_user
 
 from backend.utils.http_error_handler import handle_generic_exception
@@ -36,6 +36,27 @@ async def create_evaluation_endpoint(
     except Exception as e:
         handle_generic_exception(e)
 
+@router.post("/compare", response_model=PromptEvaluator)
+async def create_comparison_endpoint(
+        evaluation_data: Dict[str, Any] = Body(
+        ...,
+        examples=[{
+            "prompt": "Write a Python function to reverse a string",
+            "provider" : "openai",
+            "model": "gpt-3.5-turbo",
+            "optimized_prompt": "Write a Python enhanced version of function to reverse a string",
+        }]
+        ),
+        user_id: str = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Inserts a new document into the 'prompt_evaluator' collection.
+    Returns the inserted document with 'id' as a string.
+    """
+    try:
+       return await create_comparison(evaluation_data)
+    except Exception as e:
+        handle_generic_exception(e)
 
 @router.get("/{evaluation_id}", response_model=PromptEvaluator)
 async def get_evaluation_endpoint(

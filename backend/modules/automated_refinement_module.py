@@ -69,12 +69,13 @@ class AutomatedRefinementModule:
         self.final_optimized_query: str = ""
         self.optimized_output: Dict[str, Any] = {}
         self.is_optimizing: bool = False  # Simple concurrency lock
+        self.is_expert_present: bool = False
 
     def add_expert_persona(self):
         """
         Inserts the persona text at the *start* of the final optimized prompt.
         """
-        expert_text = f"You are a {self.expert} with extensive experience."
+        expert_text = f"You are {self.expert} with extensive experience."
 
         if not self.final_optimized_query:
             self.final_optimized_query = expert_text
@@ -117,6 +118,34 @@ class AutomatedRefinementModule:
         evaluation_result = await evaluator.evaluate()
         return evaluation_result
 
+    def expert_finder(self):
+        full_expert_finder_path = self.prompts.get("expert_finder")
+        prompt_context = {
+            "user_query": self.user_query,
+        }
+
+        # Render the chosen technique's prompt
+        rendered_prompt = load_and_render_prompt(full_expert_finder_path, prompt_context)
+        messages = build_user_message(rendered_prompt)
+
+        logger.info(f"Finding expert based on query: {self.user_query}  ...")
+
+        response_content = self.client.call_chat_completion(
+            model=self.model,
+            messages=messages
+        )
+
+        content = extract_json_from_response(response_content)
+
+        if isinstance(content, dict) and "Expert" in content:
+            self.is_expert_present = True
+            self.expert = content["Expert"]
+        else:
+            self.is_expert_present = False
+            self.expert = None
+
+
+
     def optimize_query(
         self, selected_technique: str, iterations: Optional[int] = None
     ) -> Dict[str, Any]:
@@ -128,6 +157,9 @@ class AutomatedRefinementModule:
         """
         if self.is_optimizing:
             raise RuntimeError("An optimization process is already in progress. Please wait.")
+
+        if not self.is_expert_present:
+            self.expert_finder()
 
         self.is_optimizing = True
         try:
@@ -164,22 +196,38 @@ class AutomatedRefinementModule:
             # We'll handle a few known patterns as examples:
 
             if selected_technique in ["CoT", "SC"]:
-                self.final_optimized_query = self.optimized_output.get("Optimized_Query", "")
-            elif selected_technique == "CoD":
-                if isinstance(self.optimized_output, list) and len(self.optimized_output) > 0:
-                    last_item = self.optimized_output[-1]
-                    self.final_optimized_query = last_item.get("Optimized_Query", "")
+                self.final_optimized_query = self.optimized_output.get("Final_Optimized_Query", "")
+            if selected_technique == "CoD":
+                if isinstance(self.optimized_output, dict) and "All_Densities" in self.optimized_output:
+                    all_densities = self.optimized_output["All_Densities"]
+                    if isinstance(all_densities, list) and all_densities:
+                        last_item = all_densities[-1]
+                        self.final_optimized_query = last_item.get("Optimized_Query", "")
+                    else:
+                        self.final_optimized_query = self.optimized_output.get("Final_Optimized_Query", "")
+                else:
+                    self.final_optimized_query = ""
             elif selected_technique == "PC":
-                if isinstance(self.optimized_output, list):
-                    last_item = self.optimized_output[-1]
-                    self.final_optimized_query = last_item.get("Optimized_Query", "")
+                if isinstance(self.optimized_output, dict) and "Query_Chaining_Process" in self.optimized_output:
+                    pc_process = self.optimized_output["Query_Chaining_Process"]
+                    if isinstance(pc_process, list) and pc_process:
+                        last_item = pc_process[-1]
+                        self.final_optimized_query = last_item.get("Subtask_Result", "")
+                    else:
+                        self.final_optimized_query = self.optimized_output.get("Final_Optimized_Query", "")
+                else:
+                    self.final_optimized_query = ""
             elif selected_technique == "ReAct":
-                if isinstance(self.optimized_output, list):
-                    # The last element might be {"Optimized_Query": "..."}
-                    if len(self.optimized_output) > 0 and "Optimized_Query" in self.optimized_output[-1]:
-                        self.final_optimized_query = self.optimized_output[-1]["Optimized_Query"]
+                if isinstance(self.optimized_output, dict):
+                    self.final_optimized_query = self.optimized_output.get("Final_Optimized_Query", "")
+                else:
+                    self.final_optimized_query = ""
+            elif selected_technique == "SC_ReAct":
+                if isinstance(self.optimized_output, dict):
+                    self.final_optimized_query = self.optimized_output.get("Final_Optimized_Query", "")
+                else:
+                    self.final_optimized_query = ""
 
-            # If the technique doesn't place the final query in a standard key, handle accordingly.
 
         finally:
             self.is_optimizing = False  # Unlock
@@ -242,7 +290,7 @@ if __name__ == "__main__":
     client = get_ai_client(provider)
 
     # Example model
-    model = config["models"].get(provider, {}).get("default")
+    model = config["models"].get(provider, {}).get("gpt-3.5-turbo")
     if not model:
         logger.error("No default model specified for provider %s in configuration.", provider)
         sys.exit(1)

@@ -1,3 +1,5 @@
+from starlette.middleware.cors import CORSMiddleware
+
 from backend.db.routers import prompt_evaluator_router
 from backend.db.routers.user_router import router as user_router
 
@@ -26,10 +28,19 @@ async def lifespan(app: FastAPI):
     finally:
         app.state.mongo_client.close()
         logger.info("MongoDB connection closed.")
+
 app = FastAPI(
     title="Prompt Evaluator API",
     description="API for evaluating prompts using AI and storing results in MongoDB",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:5174"],  # or ["*"] for any origin
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(user_router, prefix="/users", tags=["Users"])

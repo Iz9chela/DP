@@ -1,30 +1,60 @@
 **Input**: {{user_query}}
 
 **Instructions**:
-1. Generate Multiple Interpretations:
-    - Create {{number_of_versions}} plausible interpretations of the query, each rephrased or structured differently.
-2. Independent Reasoning:
-    - Analyze each interpretation SEPARATELY.
-    - Note the strengths, potential ambiguities and key details of each version.
-3. Elaborate:
-    - Ask yourself clarifying questions about ambiguous or complex segments.
-    - Provide detailed intermediate reasoning and potential implications.
-4. Validation and Comparison:
-    - Validate each interpretation not only for internal consistency but also against the key details.
-    - Compare the outcomes of all interpretations for completeness, clarity and alignment with the original goal.
-5. Selection:
-    - Identify the interpretation with the highest internal consistency and which interpretation is most accurate, coherent and aligned with the original goal.
-    - That selected interpretation becomes your final optimized query.
+Use a structured and dynamic Self-Consistency approach, explicitly preserving context by providing brief summaries after each step and referring explicitly to previous summaries to maintain clarity and avoid redundancy.
 
-**Final Output**:
-    - Include all different optimized interpretations under a key named "All_Interpretations" as a list.
-    - Present the final optimized query (from the chosen interpretation) in a separate key, "Optimized_Query".
-    - Provide the result STRICTLY as JSON, for example:
+**Dynamic reasoning process**:
+Step 1. Comprehension:
+    - Carefully read and fully comprehend the user's query.
+    - Identify ambiguities, incomplete details, potential contradictions, context, constraints and the user's intended goal.
+    - Provide a clear summary of comprehension to pass as context to the next step.
+Step 2. Multiple Interpretations Generation:
+    - Generate explicitly {{number_of_versions}} interpretations of the query based on the comprehension summary.
+    - Clearly summarize each interpretation for reference.
+Step 3. Clarifications and Hypothesis Generation per Interpretation:
+    - Explicitly list ambiguities or unclear parts for each interpretation.
+    - Formulate clarifying questions and provisional assumptions explicitly.
+    - Summarize clarifications and hypotheses explicitly for each interpretation.
+Step 4. Response and Query Refinement per Interpretation:
+    - Answer each clarifying question explicitly using inferred or hypothetical details as needed.
+    - Clearly document how these answers impact the refined queries.
+    - Summarize explicitly the refined queries for each interpretation.
+Step 5. Iterative Refinement Check:
+    - Check explicitly for remaining ambiguities or incomplete information for each interpretation.
+    - If issues remain, explicitly summarize what is missing and iterate back to Step 3 for further clarification.
+    - If fully resolved, explicitly confirm completion and summarize clearly to move to synthesis.
+Step 6. Consistency Evaluation and Final Synthesis:
+    - Evaluate explicitly each refined query for consistency, reliability and clarity.
+    - Select explicitly the most consistent and reliable query.
+    - Clearly summarize your selection and explicitly state the final optimized query.
 
+**Output Format**:
+    - Your response must STRICTLY adhere to JSON format provided below. No additional explanations or text outside the JSON structure are permitted.
+{
+  "All_Interpretations": [
     {
-      "All_Interpretations": [
-        "<interpretation_1>",
-        "<interpretation_2>",
+      "Interpretation": "<Interpretation 1 description>",
+      "Chain_of_Thought": "<Detailed reasoning explicitly documented>",
+      "Stepwise_Summaries": [
+        {"Step 1 - Comprehension": "<Summary to maintain context>"},
+        {"Step 3 - Clarifications and Hypotheses": "<Clarifications and provisional assumptions summary>"},
+        {"Step 4 - Response v Refinement": "<Summary of refined query after answering clarifications>"},
+        {"Step 5 - Iterative Refinement": "<Summary of iterative refinement step, if applicable>"}
       ],
-      "Optimized_Query": "<chosen_final_query>"
+      "Optimized_Query": "<Optimized query from interpretation 1>"
+    },
+    {
+      "Interpretation": "<Interpretation X description>",
+      "Chain_of_Thought": "<Detailed reasoning explicitly documented>",
+      "Stepwise_Summaries": [
+        {"Step 1 - Comprehension": "<Summary to maintain context>"},
+        {"Step 3 - Clarifications and Hypotheses": "<Clarifications and provisional assumptions summary>"},
+        {"Step 4 - Response and Refinement": "<Summary of refined query after answering clarifications>"},
+        {"Step 5 - Iterative Refinement": "<Summary of iterative refinement step, if applicable>"}
+      ],
+      "Optimized_Query": "<Optimized query from interpretation X>"
     }
+  ],
+  "Final_Synthesis": "<Explicit summary explaining the most consistent and reliable interpretation>",
+  "Final_Optimized_Query": "<The final refined and selected optimized query>"
+}

@@ -1,36 +1,23 @@
-import { useState } from "react";
-import axios from "axios";
-import "./App.css";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ComparePage from './pages/ComparePage';
+import EvaluationPage from './pages/EvaluationPage';
+import OptimizationPage from './pages/OptimizationPage';
 
 function App() {
-  const [query, setQuery] = useState("");
-  const [response, setResponse] = useState(null);
-
-  const handleSubmit = async () => {
-    try {
-      const res = await axios.post("http://localhost:5000/api/process", {
-        query,
-      });
-      setResponse(res.data);
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  };
-
   return (
-    <div className="container">
-      <h1>Type your request</h1>
-      <textarea
-        className="textarea"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Enter your query here..."
-      />
-      <button className="button" onClick={handleSubmit}>
-        Send
-      </button>
-      {response && <div className="result">Response: {response}</div>}
-    </div>
+    <Router>
+      {/* If you want a global NavBar, place it here */}
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/compare" element={<ComparePage />} />
+        <Route path="/evaluate" element={<EvaluationPage />} />
+        <Route path="/optimize" element={<OptimizationPage />} />
+      </Routes>
+    </Router>
   );
 }
 
