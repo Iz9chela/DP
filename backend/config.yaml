@@ -27,6 +27,8 @@ prompts:
   CoD: "prompts/CoD_prompt.txt"
   PC: "prompts/PC_prompt.txt"
   ReAct: "prompts/ReAct_prompt.txt"
+  SC_ReAct: "prompts/SC_React_prompt.txt"
+  expert_finder: "prompts/expert_finder_prompt.txt"
 
 database:
   uri: "mongodb+srv://{user}:{pass}@dp-database.fczwf.mongodb.net/?retryWrites=true&w=majority&appName=DP-Database"

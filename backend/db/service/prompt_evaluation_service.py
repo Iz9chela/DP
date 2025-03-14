@@ -32,16 +32,15 @@ async def create_prompt_evaluation(evaluation_data: Dict[str, Any]) -> Dict[str,
     Inserts a new prompt evaluation into the database, validates input, and performs AI evaluation.
     """
     # Validate input data
-    required_fields = ["prompt", "provider", "model", "evaluation_method"]
+    required_fields = ["user_query", "provider", "model", "evaluation_method"]
     validate_required_fields(evaluation_data, required_fields)
     validate_provider_and_model(evaluation_data["provider"], evaluation_data["model"])
 
     db = get_database()
 
-    # Perform evaluation using AI
     provider = evaluation_data["provider"]
     evaluator = Evaluator(
-        prompt=evaluation_data["prompt"],
+        user_query=evaluation_data["user_query"],
         provider=provider,
         model=evaluation_data["model"],
         human_evaluation=(evaluation_data["evaluation_method"] == "human"),
@@ -49,17 +48,15 @@ async def create_prompt_evaluation(evaluation_data: Dict[str, Any]) -> Dict[str,
     )
 
     evaluation_result = await evaluator.evaluate()
-    evaluation_data["parsed_result"] = evaluation_result
+    evaluation_data["evaluation_result"] = evaluation_result
     evaluation_data["created_at"] = datetime.utcnow()
     evaluation_data["updated_at"] = datetime.utcnow()
     evaluation_data["is_deleted"] = False
 
-    # Prepare document
     p_model = PromptEvaluator.model_validate(evaluation_data)
     doc = p_model.model_dump(by_alias=True)
     doc.pop("_id", None)
 
-    # Insert into MongoDB
     result = await db.prompt_evaluator.insert_one(doc)
 
     doc.pop("_id", None)
@@ -73,7 +70,7 @@ async def create_comparison(evaluation_data: Dict[str, Any]) -> Dict[str, Any]:
     Inserts a new prompt evaluation into the database, validates input, and performs AI comparison.
     """
     # Validate input data
-    required_fields = ["prompt", "provider", "model", "optimized_prompt"]
+    required_fields = ["user_query", "provider", "model", "optimized_user_query"] # TODO provider and model could be extracted.
     validate_required_fields(evaluation_data, required_fields)
     validate_provider_and_model(evaluation_data["provider"], evaluation_data["model"])
 
@@ -82,15 +79,15 @@ async def create_comparison(evaluation_data: Dict[str, Any]) -> Dict[str, Any]:
     # Perform evaluation using AI
     provider = evaluation_data["provider"]
     evaluator = Evaluator(
-        prompt=evaluation_data["prompt"],
+        user_query=evaluation_data["user_query"],
         provider=provider,
         model=evaluation_data["model"],
         prompts=config.get("prompts", {}),
-        optimized_prompt = evaluation_data["optimized_prompt"]
+        optimized_user_query = evaluation_data["optimized_user_query"]
     )
 
-    evaluation_result = await evaluator.compare()
-    evaluation_data["parsed_result_after_comparison"] = evaluation_result
+    parsed_raw_result = await evaluator.compare()
+    evaluation_data["parsed_result_after_comparison"] = parsed_raw_result
     evaluation_data["created_at"] = datetime.utcnow()
     evaluation_data["updated_at"] = datetime.utcnow()
     evaluation_data["is_deleted"] = False

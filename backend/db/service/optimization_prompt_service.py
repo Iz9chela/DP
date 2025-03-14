@@ -47,8 +47,10 @@ async def create_optimized_prompt(prompt_data: Dict[str, Any]) -> Dict[str, Any]
         iterations=prompt_data["number_of_iterations"]
     )
 
-    prompt_data["optimized_output"] = optimized_data
+    prompt_data["raw_output"] = optimized_data
     prompt_data["final_optimized_query"] = refinement_module.final_optimized_query
+    prompt_data["expert_persona_text"] = refinement_module.expert_persona_text
+    prompt_data["emotional_stimuli_text"] = refinement_module.emotional_stimuli_text
     prompt_data["created_at"] = datetime.utcnow()
     prompt_data["updated_at"] = datetime.utcnow()
     prompt_data["is_deleted"] = False

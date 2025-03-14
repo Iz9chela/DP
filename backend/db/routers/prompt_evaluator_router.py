@@ -19,7 +19,7 @@ async def create_evaluation_endpoint(
         evaluation_data: Dict[str, Any] = Body(
         ...,
         examples=[{
-            "prompt": "Write a Python function to reverse a string",
+            "user_query": "Write a Python function to reverse a string",
             "provider" : "openai",
             "model": "gpt-3.5-turbo",
             "evaluation_method": "human",
@@ -41,10 +41,10 @@ async def create_comparison_endpoint(
         evaluation_data: Dict[str, Any] = Body(
         ...,
         examples=[{
-            "prompt": "Write a Python function to reverse a string",
+            "user_query": "Write a Python function to reverse a string",
             "provider" : "openai",
             "model": "gpt-3.5-turbo",
-            "optimized_prompt": "Write a Python enhanced version of function to reverse a string",
+            "optimized_user_query": "Write a Python enhanced version of function to reverse a string",
         }]
         ),
         user_id: str = Depends(get_current_user)
@@ -93,11 +93,22 @@ async def update_evaluation_endpoint(
         update_data: Dict[str, Any] = Body(
         ...,
         examples=[{
-            "model": "gpt-4o-mini",
-            "parsed_result": {
-                "prompt_rating": 6,
-                "reasons": ["Improved clarity", "Better structure"]
-            }
+            "user_query": "Create a snake game in Python.",
+            "evaluation_method": "evaluator_llm",
+            "provider": "openai",
+            "model": "gpt-4o",
+            "evaluation_result": {
+                "prompt_rating": "8",
+                "reasons": ["Clear goal, context, and instructions for creating a snake game in Python.",
+                            "Lacks explicit constraints and persona details, but otherwise well-defined.",
+                            "No examples provided, but overall well-structured."]
+            },
+            "parsed_result_after_comparison": {
+                "default_query_response": "Result1",
+                "optimized_query_response": "Result2"
+            },
+            "user_verdict_after_comparison": "Better",
+            "optimized_user_query": "Create a enhanced snake game in Python with many examples.",
         }]
     ),
         user_id: str = Depends(get_current_user)

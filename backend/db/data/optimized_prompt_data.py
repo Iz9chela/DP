@@ -40,7 +40,7 @@ class OptimizedPrompt(BaseModel):
         examples=[5]
     )
 
-    optimized_output: Dict = field(
+    raw_output: Dict = field(
         default_factory=dict,
         metadata={"description": "Raw JSON structure returned by the LLM"}
     )
@@ -49,6 +49,26 @@ class OptimizedPrompt(BaseModel):
         default=None,
         description="The final refined/optimized query if applicable",
         examples = ["Summarize AI developments in 2024 in 500 words."]
+    )
+
+    expert_persona_text: Optional[str] = Field(
+        default=None,
+        description="Expert persona for user query.",
+        examples = ["You are Slang and informal language expert with extensive experience."]
+    )
+
+    emotional_stimuli_text: Optional[str] = Field(
+        default="This is very important to my career.",
+        description="Emotional stimuli for user query.",
+        examples=["Write your answer and give me a confidence score between 0-1 for your answer.",
+        "This is very important to my career.",
+        "You'd better be sure.",
+        "Stay focused and dedicated to your goals. Your consistent efforts will lead to outstanding achievements.",
+        "Take pride in your work and give it your best. Your commitment to excellence sets you apart.",
+        "Remember that progress is made one step at a time. Stay determined and keep moving forward.",
+        "You'd better be sure.",
+        "Are you sure?",
+        "Are you sure that's your final answer? It might be worth taking another look."]
     )
 
     evaluation_id: Optional[str] = Field(

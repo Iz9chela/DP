@@ -31,7 +31,7 @@ Step 6. Consistency Evaluation and Final Synthesis:
 **Output Format**:
     - Your response must STRICTLY adhere to JSON format provided below. No additional explanations or text outside the JSON structure are permitted.
 {
-  "All_Interpretations": [
+  "Interpretations": [
     {
       "Interpretation": "<Interpretation 1 description>",
       "Chain_of_Thought": "<Detailed reasoning explicitly documented>",

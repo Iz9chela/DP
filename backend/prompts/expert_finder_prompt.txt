@@ -7,7 +7,6 @@
 
 **Output Format**:
     - Your response must STRICTLY adhere to JSON format provided below. No additional explanations or text outside the JSON structure are permitted.
-    - Provide a STRICTLY JSON example:
 {
   "Expert": "<Single identified EXPERT>"
 }

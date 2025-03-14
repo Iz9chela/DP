@@ -58,8 +58,16 @@ async def update_optimized_prompt_endpoint(
         update_data: Dict[str, Any] = Body(
         ...,
         examples=[{
-            "final_optimized_query": "Updated query after refinement",
-            "optimized_output": {"iterations": [{"step": 1, "query": "Refined version"}]}
+            "user_query": "Generate a 500-word blog post about AI advancements",
+            "provider": "openai",
+            "model": "gpt-4o",
+            "technique": "CoT",
+            "number_of_iterations": 5,
+            "raw_output": {},
+            "final_optimized_query": "Summarize AI developments in 2024 in 500 words.",
+            "expert_persona_text": "You are Slang and informal language expert with extensive experience.",
+            "emotional_stimuli_text": "Write your answer and give me a confidence score between 0-1 for your answer.",
+            "evaluation_id": "62c123456789abcdef123456",
         }]
     ),
         user_id: str = Depends(get_current_user)

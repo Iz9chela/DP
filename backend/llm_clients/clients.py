@@ -39,10 +39,10 @@ class OpenAIClient(AIClient):
         while attempt < self.max_retries:
             try:
                 start_time = time.time()
-                if model == "o1-preview":
-                    params["max_completion_tokens"] = 2048
+                if model == "o3-mini":
+                    params["max_completion_tokens"] = 4096
                 else:
-                    params["max_tokens"] = 1024
+                    params["max_tokens"] = 2048
                 response = self.client.chat.completions.create(**params)
                 result = response.choices[0].message.content.strip()
                 elapsed_time = time.time() - start_time
@@ -80,7 +80,7 @@ class AnthropicClient(AIClient):
                 response = self.client.messages.create(
                     model=model,
                     messages=messages,
-                    max_tokens=1024,
+                    max_tokens=2048,
                     temperature=0.0
                 )
                 elapsed_time = time.time() - start_time
