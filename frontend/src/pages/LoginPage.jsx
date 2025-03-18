@@ -28,7 +28,6 @@ function LoginPage() {
       // 5) Store the full_name in localStorage for other pages
       localStorage.setItem('fullName', userDoc.full_name);
 
-      // 6) Navigate to e.g. the Compare page
       navigate('/optimize');
     } catch (error) {
       console.error(error);

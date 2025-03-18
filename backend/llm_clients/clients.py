@@ -41,6 +41,7 @@ class OpenAIClient(AIClient):
                 start_time = time.time()
                 if model == "o3-mini":
                     params["max_completion_tokens"] = 4096
+                    del params["temperature"]
                 else:
                     params["max_tokens"] = 2048
                 response = self.client.chat.completions.create(**params)

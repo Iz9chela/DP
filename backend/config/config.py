@@ -20,7 +20,7 @@ def load_config(filepath: str) -> Dict[str, Any]:
             return config
     except Exception as e:
         logger.error("Failed to load configuration file %s: %s", absolute_path, e)
-        raise
+        raise RuntimeError(f"Failed to load configuration file {absolute_path}") from e
 
 def get_api_key(provider: str, config: Dict[str, Any]) -> str:
     """

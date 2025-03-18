@@ -30,14 +30,14 @@ async def lifespan(app: FastAPI):
         logger.info("MongoDB connection closed.")
 
 app = FastAPI(
-    title="Prompt Evaluator API",
-    description="API for evaluating prompts using AI and storing results in MongoDB",
+    title="Prompt Optimization API",
+    description="API for evaluating, optimization and testing prompts using AI and storing results in MongoDB",
     version="1.0.0"
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174"],  # or ["*"] for any origin
+    allow_origins=["http://localhost:5173", "http://localhost:5174"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

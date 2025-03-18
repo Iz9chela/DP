@@ -70,7 +70,7 @@ async def create_comparison(evaluation_data: Dict[str, Any]) -> Dict[str, Any]:
     Inserts a new prompt evaluation into the database, validates input, and performs AI comparison.
     """
     # Validate input data
-    required_fields = ["user_query", "provider", "model", "optimized_user_query"] # TODO provider and model could be extracted.
+    required_fields = ["user_query", "provider", "model", "optimized_user_query"]
     validate_required_fields(evaluation_data, required_fields)
     validate_provider_and_model(evaluation_data["provider"], evaluation_data["model"])
 
@@ -85,6 +85,8 @@ async def create_comparison(evaluation_data: Dict[str, Any]) -> Dict[str, Any]:
         prompts=config.get("prompts", {}),
         optimized_user_query = evaluation_data["optimized_user_query"]
     )
+
+    evaluation_data["evaluation_method"] = "llm"
 
     parsed_raw_result = await evaluator.compare()
     evaluation_data["parsed_result_after_comparison"] = parsed_raw_result
@@ -103,6 +105,43 @@ async def create_comparison(evaluation_data: Dict[str, Any]) -> Dict[str, Any]:
     doc.pop("_id", None)
     doc["id"] = str(result.inserted_id)
     logger.info("Created new prompt comparison with _id: %s", result.inserted_id)
+
+    return doc
+
+async def create_blind_outputs(evaluation_data: Dict[str, Any]) -> Dict[str, Any]:
+
+    required_fields = ["user_query", "num_versions"]
+    validate_required_fields(evaluation_data, required_fields)
+
+    db = get_database()
+
+    provider = "openai"
+    evaluator = Evaluator(
+        user_query=evaluation_data["user_query"],
+        provider=provider,
+        model="gpt-3.5-turbo",
+        prompts=config.get("prompts", {}),
+    )
+
+    evaluation_data["evaluation_method"] = "llm"
+
+    parsed_raw_result = await evaluator.generate_blind_results(evaluation_data["user_query"], evaluation_data["num_versions"])
+    evaluation_data["blind_results"] = parsed_raw_result
+    evaluation_data["provider"] = provider
+    evaluation_data["model"] = "gpt-3.5-turbo"
+    evaluation_data["created_at"] = datetime.utcnow()
+    evaluation_data["updated_at"] = datetime.utcnow()
+    evaluation_data["is_deleted"] = False
+
+    p_model = PromptEvaluator.model_validate(evaluation_data)
+    doc = p_model.model_dump(by_alias=True)
+    doc.pop("_id", None)
+
+    result = await db.prompt_evaluator.insert_one(doc)
+
+    doc.pop("_id", None)
+    doc["id"] = str(result.inserted_id)
+    logger.info("Created new blind results with _id: %s", result.inserted_id)
 
     return doc
 

@@ -21,7 +21,7 @@ Use the following rating guide:
 
 3. Clearly justify your rating in 1 to 3 concise statements explaining the presence or absence of the criteria.
 
-**Final Output**:
+**Output format**:
     - Return only JSON object with no extra commentary or formatting.
     - Your output must be a valid JSON object with EXACTLY the following fields:
 {

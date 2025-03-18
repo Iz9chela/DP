@@ -5,7 +5,7 @@ from fastapi import APIRouter, Body, Depends
 from backend.db.data.prompt_evaluator_data import PromptEvaluator
 from backend.db.db import get_database
 from backend.db.service.prompt_evaluation_service import create_prompt_evaluation, get_prompt_evaluation, \
-    list_prompt_evaluations, update_prompt_evaluation, delete_prompt_evaluation, create_comparison
+    list_prompt_evaluations, update_prompt_evaluation, delete_prompt_evaluation, create_comparison, create_blind_outputs
 from backend.utils.auth_dependency import get_current_user
 
 from backend.utils.http_error_handler import handle_generic_exception
@@ -55,6 +55,26 @@ async def create_comparison_endpoint(
     """
     try:
        return await create_comparison(evaluation_data)
+    except Exception as e:
+        handle_generic_exception(e)
+
+@router.post("/multi_versions")
+async def create_multi_versions_endpoint(
+    data: Dict[str, Any] = Body(
+        ...,
+        examples=[{
+            "user_query": "Explain how quantum entanglement works in simple terms.",
+            "num_versions": 2
+        }]
+    ),
+    user_id: str = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Creates multiple client versions with random model picks from openai and claude,
+    saving all responses in the 'multi_versions' collection.
+    """
+    try:
+        return await create_blind_outputs(data)
     except Exception as e:
         handle_generic_exception(e)
 

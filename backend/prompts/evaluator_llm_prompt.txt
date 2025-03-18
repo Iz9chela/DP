@@ -5,7 +5,7 @@ You are a Professional Prompt Evaluator with extensive experience.
 Your task is to evaluate the following query using your internal evaluation criteria.
 Provide a rating from 1 to 10 (where 10 indicates an exceptionally well-crafted query) and justify your rating in 1 to 3 concise statements.
 
-**Final Output**:
+**Output format**:
     - Return only JSON object with no extra commentary or formatting.
     - Your output must be a valid JSON object with EXACTLY the following fields:
 {

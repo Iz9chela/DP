@@ -15,7 +15,7 @@ class PromptEvaluator(BaseModel):
         description="The user query for evaluation",
         examples=["Create a snake game in Python."]
     )
-    evaluation_method: str = Field(
+    evaluation_method: Optional[str] = Field(
         ...,
         description="The evaluation method used (e.g., 'human' or 'llm')",
         examples=["evaluator_human", "evaluator_llm"]
@@ -47,6 +47,18 @@ class PromptEvaluator(BaseModel):
         description="Optimized query for comparison to original query",
         examples=["Create a enhanced snake game in Python with many examples."]
     )
+
+    blind_results: list[Any] = field(
+        default_factory=list,
+        metadata={"description": "Output for user from different models."}
+    )
+
+    chosen_model_after_blind_results: Optional[str] = Field(
+        default=None,
+        description="Chosen model by user after blinding results",
+        examples=["gpt-4o", "claude-3-5-haiku-latest"]
+    )
+
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
         description="Timestamp when the evaluation was created"
