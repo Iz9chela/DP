@@ -1,6 +1,6 @@
-# DP - Prompt Optimization Platform
+Prompt Optimization Platform
 
-DP is a platform for prompt optimization, evaluation, and comparison of AI model outputs. The application consists of two main parts: a frontend and a backend. They communicate via a REST API, and data is stored in a MongoDB database.
+It is a platform for prompt optimization, evaluation, and comparison of AI model outputs. The application consists of two main parts: a frontend and a backend. They communicate via a REST API, and data is stored in a MongoDB database.
 
 ## Table of Contents
 
