@@ -26,7 +26,7 @@ class OpenAIClient(AIClient):
         self.max_retries = max_retries
         self.backoff_factor = backoff_factor
 
-    def call_chat_completion(self, model: str, messages: List[Dict[str, str]]) -> str:
+    def call_chat_completion(self, model: str, messages: List[Dict[str, str]]) -> Dict[str, Any]:
         """
         Call the OpenAI chat completion API with retry logic.
         """
@@ -43,12 +43,21 @@ class OpenAIClient(AIClient):
                     params["max_completion_tokens"] = 4096
                     del params["temperature"]
                 else:
-                    params["max_tokens"] = 2048
+                    params["max_tokens"] = 4096
                 response = self.client.chat.completions.create(**params)
-                result = response.choices[0].message.content.strip()
                 elapsed_time = time.time() - start_time
+                result_text = response.choices[0].message.content.strip()
+                usage_obj = response.usage
+                tokens_spent = usage_obj.total_tokens if usage_obj else None
+                usage_data = {
+                    "tokens_spent": tokens_spent,
+                    "time_in_seconds": round(elapsed_time, 3)
+                }
                 logger.info("Received response from AI model. AI API call took %.2f seconds", elapsed_time)
-                return result
+                return {
+                    "text": result_text,
+                    "usage": usage_data
+                }
             except Exception as e:
                 attempt += 1
                 sleep_time = self.backoff_factor * (2 ** (attempt - 1))
@@ -67,7 +76,7 @@ class AnthropicClient(AIClient):
         self.max_retries = max_retries
         self.backoff_factor = backoff_factor
 
-    def call_chat_completion(self, model: str, messages: List[Dict[str, str]]) -> str:
+    def call_chat_completion(self, model: str, messages: List[Dict[str, str]]) -> Dict[str, Any]:
         """
         Calls the Anthropic Claude API in a chat-like manner,
         converting 'messages' (role/content) into the format
@@ -81,13 +90,29 @@ class AnthropicClient(AIClient):
                 response = self.client.messages.create(
                     model=model,
                     messages=messages,
-                    max_tokens=2048,
+                    max_tokens=4096,
                     temperature=0.0
                 )
                 elapsed_time = time.time() - start_time
                 logger.info("Received response from Anthropic. API call took %.2f seconds", elapsed_time)
 
-                return response.content[0].text
+                result_text = response.content[0].text.strip() if response.content else ""
+
+                prompt_word_count = sum(len(msg["content"].split()) for msg in messages)
+                prompt_tokens = int(prompt_word_count * 1.33)
+                completion_word_count = len(result_text.split())
+                completion_tokens = int(completion_word_count * 1.33)
+                tokens_spent = prompt_tokens + completion_tokens
+
+                usage_data = {
+                    "tokens_spent": tokens_spent,
+                    "time_in_seconds": round(elapsed_time, 3)
+                }
+
+                return {
+                    "text": result_text,
+                    "usage": usage_data
+                }
 
             except Exception as e:
                 attempt += 1

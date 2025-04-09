@@ -24,7 +24,7 @@ Step 4. Observation:
     - Explicitly document observations resulting from actions taken.
     - Clearly evaluate how actions impacted and improved the interpretation.
     - Explicitly summarize your observations clearly as context for iterative refinements.
-Repeat Steps 2-4 iteratively if ambiguities remain unresolved, explicitly summarizing each cycle.
+Repeat Steps 2-4 iteratively {{number_of_iterations}} times, explicitly summarizing each cycle.
 Step 5. Consistency Evaluation and Final Synthesis:
     - Evaluate explicitly each interpretation for consistency, reliability, and clarity based on all iterations.
     - Select explicitly the most consistent and reliable interpretation.

@@ -9,15 +9,18 @@ Step 1. Task Decomposition:
     - Explicitly break down the complex task into clearly defined, manageable subtasks.
     - Provide a brief and explicit summary of each identified subtask.
 
-**Iterative Process** (Repeat for each subtask):
-Step 2. Solve Subtask:
-    - Explicitly address each subtask individually, focusing on clearly defined objectives.
-    - Provide explicit reasoning and outcomes for the subtask.
-    - Clearly summarize the output of each subtask as context for the next subtask.
+**Repeat the following steps for each identified subtask**
+Step 2. Optimize Subtask:
+   - Directly address the current subtask, focusing on accuracy and clarity.
+   - Apply the following optimization rules:
+       1. Include only essential details, removing redundancies.
+       2. Preserve meaningful context for continuity.
+       3. Refine wording to be succinct yet comprehensive.
+   - Summarize the optimized result before proceeding.
 Step 3. Context Integration:
-    - Explicitly integrate outputs from previous subtasks into the next subtask.
+    - Clearly integrate the current subtask’s refined output into the broader context.
     - Ensure continuity and explicitly reference prior outputs to maintain clarity and prevent redundancy.
-    - Clearly document context integration for each iteration.
+    - Clearly document how each subtask’s result affects the subsequent step.
 Step 4. Synthesize:
     - Explicitly combine all outputs from completed subtasks into a cohesive, complete, and optimized final query.
     - Clearly ensure there are no contradictions, omissions, or unresolved issues.
@@ -25,8 +28,7 @@ Step 4. Synthesize:
 
 **Guidelines**:
     - Each subtask must explicitly build upon the context provided by previous subtasks.
-    - Clearly maintain continuity and clarity of reasoning throughout each iteration.
-    - Allow slight expansions only if necessary to preserve critical context or information.
+    - Maintain clear, step-by-step reasoning throughout.
 
 **Output Format**:
     - Your response must STRICTLY adhere to the JSON format provided below. No additional explanations or text outside the JSON structure are permitted.

@@ -54,7 +54,8 @@ function EvaluationPage() {
     openai: [
       { label: 'gpt-3.5-turbo', value: 'gpt-3.5-turbo' },
       { label: 'gpt-4o', value: 'gpt-4o' },
-      { label: 'gpt-4o-mini', value: 'gpt-4o-mini' }
+      { label: 'gpt-4o-mini', value: 'gpt-4o-mini' },
+      { label: 'o3-mini', value: 'o3-mini' }
     ],
     claude: [
       { label: 'claude-3-haiku-20240307', value: 'claude-3-haiku-20240307' },
@@ -133,7 +134,7 @@ function EvaluationPage() {
             />
           </div>
           {/* Model Dropdown */}
-          <div className="field mb-3" style={{ marginBottom: isModelOpen ? '80px' : '30px' }}>
+          <div className="field mb-3" style={{ marginBottom: isModelOpen ? '105px' : '30px' }}>
             <label className="block mb-2">Model:</label>
             <Dropdown
               value={model}
@@ -188,7 +189,7 @@ function EvaluationPage() {
               to="/blind"
               className={({ isActive }) => (isActive ? "grey active" : "grey")}
             >
-              Leader Board Page
+              Blind Results Page
             </NavLink>
           </li>
         </div>

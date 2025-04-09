@@ -18,7 +18,6 @@ emotional_stimuli_list = [
     "Stay focused and dedicated to your goals. Your consistent efforts will lead to outstanding achievements.",
     "Take pride in your work and give it your best. Your commitment to excellence sets you apart.",
     "Remember that progress is made one step at a time. Stay determined and keep moving forward.",
-    "You'd better be sure.",
     "Are you sure?",
     "Are you sure that's your final answer? It might be worth taking another look."
 ]
@@ -83,12 +82,10 @@ class AutomatedRefinementModule:
 
         logger.info(f"Finding expert based on query: {self.user_query}  ...")
 
-        response_content = self.client.call_chat_completion(
-            model=self.model,
-            messages=messages
-        )
+        response_dict = self.client.call_chat_completion(self.model, messages)
+        response_text = response_dict["text"]
 
-        content = extract_json_from_response(response_content)
+        content = extract_json_from_response(response_text)
 
         if isinstance(content, dict) and "Expert" in content:
             self.is_expert_present = True
@@ -117,63 +114,31 @@ class AutomatedRefinementModule:
 
             iters = iterations or self.max_iterations
 
-            # Prepare context for the prompt template
             prompt_context = {
                 "user_query": self.user_query,
                 "number_of_iterations": iters,
                 "number_of_versions": iters
             }
 
-            # Render the chosen technique's prompt
             rendered_prompt = load_and_render_prompt(technique_prompt_path, prompt_context)
             messages = build_user_message(rendered_prompt)
 
             logger.info(f"Optimizing user query with technique '{selected_technique}'...")
-            # Call the LLM
-            response_content = self.client.call_chat_completion(
+
+            response_dict = self.client.call_chat_completion(
                 model=self.model,
                 messages=messages
             )
-            self.raw_output = extract_json_from_response(response_content)
+            response_text = response_dict["text"]
+            usage_info = response_dict["usage"]
+            self.raw_output = extract_json_from_response(response_text)
+            self.raw_output["usage"] = usage_info
 
-            # TODO Think how to simplify code below
-
-            if selected_technique in ["CoT", "SC"]:
+            if selected_technique in ["CoT", "SC", "ReAct", "PC", "CoD", "SC_ReAct"]:
                 self.final_optimized_query = self.raw_output.get("Final_Optimized_Query", "")
-            if selected_technique == "CoD":
-                if isinstance(self.raw_output, dict) and "All_Densities" in self.raw_output:
-                    all_densities = self.raw_output["All_Densities"]
-                    if isinstance(all_densities, list) and all_densities:
-                        last_item = all_densities[-1]
-                        self.final_optimized_query = last_item.get("Optimized_Query", "")
-                    else:
-                        self.final_optimized_query = self.raw_output.get("Final_Optimized_Query", "")
-                else:
-                    self.final_optimized_query = ""
-            elif selected_technique == "PC":
-                if isinstance(self.raw_output, dict) and "Query_Chaining_Process" in self.raw_output:
-                    pc_process = self.raw_output["Query_Chaining_Process"]
-                    if isinstance(pc_process, list) and pc_process:
-                        last_item = pc_process[-1]
-                        self.final_optimized_query = last_item.get("Subtask_Result", "")
-                    else:
-                        self.final_optimized_query = self.raw_output.get("Final_Optimized_Query", "")
-                else:
-                    self.final_optimized_query = ""
-            elif selected_technique == "ReAct":
-                if isinstance(self.raw_output, dict):
-                    self.final_optimized_query = self.raw_output.get("Final_Optimized_Query", "")
-                else:
-                    self.final_optimized_query = ""
-            elif selected_technique == "SC_ReAct":
-                if isinstance(self.raw_output, dict):
-                    self.final_optimized_query = self.raw_output.get("Final_Optimized_Query", "")
-                else:
-                    self.final_optimized_query = ""
-
 
         finally:
-            self.is_optimizing = False  # Unlock
+            self.is_optimizing = False
 
         return self.raw_output
 

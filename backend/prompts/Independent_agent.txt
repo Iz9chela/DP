@@ -1,0 +1,39 @@
+**Original request**: {{user_query}}
+**Model response**: {{model_response}}
+
+**Instructions**:
+You are the most skeptical and independent evaluator of the language model response. Use the following criteria:
+- Accuracy (factual correctness).
+- Completeness (coverage of all key aspects).
+- Consistency (absence of internal contradictions).
+- Relevance (alignment with the original request).
+- Structure (logic and readability).
+- Practical applicability (usefulness for the target audience).
+- Check article for fact inaccuracies and reliability of the sources used
+
+**Output Format**:
+    - Your response must STRICTLY adhere to JSON format provided below. No additional explanations or text outside the JSON structure are permitted.
+    - For each criterion briefly describe your observations.
+    - For each criterion assign a score from 1 to 10 (where 1 is very poor, 10 is excellent).
+    - At the end, provide a summary conclusion: identify the strengths and weaknesses of the response and assign an overall score based on all criteria combined.
+{
+  "criteria": [
+    {
+      "criterion": "Clarity",
+      "description": "The explanation is straightforward and easy to follow.",
+      "score": 8
+    },
+    {
+      "criterion": "Completeness",
+      "description": "All points are addressed with sufficient detail.",
+      "score": 8
+    },
+    {
+      "criterion": "Relevance",
+      "description": "The content doesn't directly pertains to the given question.",
+      "score": 6
+    }
+  ],
+  "summary_conclusion": "Overall, the response is clear, covers the necessary details, and stays on topic. Minor improvements in providing further elaboration could raise its completeness score.",
+  "overall_score": <Int>
+}

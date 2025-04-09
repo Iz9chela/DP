@@ -14,7 +14,6 @@ models:
     o3-mini: "o3-mini"
   claude:
     claude-3-haiku-20240307: "claude-3-haiku-20240307"
-    claude_2.1: "claude-2.1"
     claude-3-5-haiku-latest: "claude-3-5-haiku-latest"
     claude-3-7-sonnet-latest: "claude-3-7-sonnet-latest"
 
@@ -29,6 +28,7 @@ prompts:
   ReAct: "prompts/ReAct_prompt.txt"
   SC_ReAct: "prompts/SC_React_prompt.txt"
   expert_finder: "prompts/expert_finder_prompt.txt"
+  independent_agent: "prompts/independent_agent.txt"
 
 database:
   uri: "mongodb+srv://{user}:{pass}@dp-database.fczwf.mongodb.net/?retryWrites=true&w=majority&appName=DP-Database"

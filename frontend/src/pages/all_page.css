@@ -38,7 +38,7 @@ h2 {
 }
 .login {
     position: fixed;
-    top: 830px;
+    top: 30px;
     padding-left: 0px;
 }
 .field_gap {
@@ -72,7 +72,7 @@ h2 {
     text-align: center; /* Optional: center the text */
   }
 .surface-border {
-    margin-top: 45px;
+    margin-top: 25px;
 }
 .p-button-primary {
     color: white;
@@ -142,10 +142,51 @@ h2 {
     flex-direction: column;
     justify-content:center;
     align-items: center;
+    align-items: center
 }
 .form-reg {
-    margin-top: 10px;
+    margin-top: 25px;
 }
 .form-btn {
     margin-top: 20px;
+}
+.btn-field {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px
+}
+.surface-card label {
+    margin-left: 0px;
+    width:130px;    /* Fixed width for labels */
+    text-align: left; /* Ensure the text is left aligned */
+    display: inline-block;
+}
+.p-inputtext {
+    background-color: #212123;
+    color: white;
+    border-left: 1px solid gray;
+    border-top: 1px solid gray;
+}
+button {
+    color: white;
+}
+.container {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+.inner_pos {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+}
+
+.elements_gap{
+    gap: 20px;
+    display: flex;
+    flex-direction: column;
 }

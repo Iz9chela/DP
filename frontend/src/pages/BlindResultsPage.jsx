@@ -102,7 +102,20 @@ function BlindResultsPage() {
  
   return (
     <div className="p-4">
-            <div className="menu leader_menu">
+            <div className="columns-wrapper">
+            <div className="form-container  container_border" style={{ 
+              paddingRight: '200px',
+              justifyContent: 'start'
+              }}>
+            <div className="flex justify-content-end login">
+              <span style= {{
+                
+              }} >Hello, {fullName}</span>
+          </div>
+          </div>
+
+          <div className="user-query">
+            <div className="menu">
           <li>
             <NavLink
               to="/optimize"
@@ -130,9 +143,6 @@ function BlindResultsPage() {
           </li>
         </div>
 
-    <div className="flex justify-content-end login" style={{ marginBottom: '1rem' }}>
-        <span>Hello, {fullName}</span>
-    </div>
     
     <div className="blind-container">
       <h2>Blind Results Page</h2>
@@ -191,7 +201,7 @@ function BlindResultsPage() {
  
       {/* If we have blindResults, show them */}
       {blindResults.length > 0 && (
-        <div className="mt-4">
+        <div className="mt-4 elements_gap">
           <h3>Blind Results (pick one)</h3>
           {blindResults.map((item, idx) => (
             <div
@@ -233,6 +243,8 @@ function BlindResultsPage() {
           ))}
         </div>
       )}
+    </div>
+    </div>
     </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { loginUser } from '../api/authApi';
 import { getUserIdFromToken, fetchUserById } from '../api/userApi';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
+import background_img from '../backgrounds/cool-background.png';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -36,11 +37,21 @@ function LoginPage() {
   }
 
   return (
-    <div className="flex flex-column align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
-      <div className="card p-4 shadow-2 surface-card">
-        <h2>Welcome Back!</h2>
+    <div className="container">
+    <div className="flex flex-column align-items-center justify-content-center" style={{
+       minHeight: '100vh',
+      backgroundImage: `url(${background_img})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+       }}
+       >
+        <div className="inner_pos">
+      <div className="card p-4 shadow-2">
+      <h2>Welcome Back!</h2>
+        <div className="surface-card">
         <div className="field mb-3">
-          <label htmlFor="email" className="block font-medium mb-2">Email Address</label>
+          <label htmlFor="email" className="block font-medium mb-2">Email Address:</label>
           <InputText
             id="email"
             value={email}
@@ -49,7 +60,7 @@ function LoginPage() {
           />
         </div>
         <div className="field mb-3">
-          <label htmlFor="password" className="block font-medium mb-2">Password</label>
+          <label htmlFor="password" className="block font-medium mb-2 form-reg ">Password:</label>
           <InputText
             id="password"
             type="password"
@@ -57,10 +68,15 @@ function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <Button label="Log In" className="p-button-success" onClick={handleLogin} />
+        </div>
+        <div className="btn-field">
+        <Button label="Log In" className="p-button-success log_btn" onClick={handleLogin} />
         <Button label="Sign Up" className="p-button-text mt-3" onClick={() => navigate('/register')} />
       </div>
-    </div>
+      </div>
+      </div>
+      </div>
+      </div>
   );
 }
 

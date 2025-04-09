@@ -62,8 +62,9 @@ class Evaluator:
         messages = build_user_message(rendered_prompt)
 
         logger.info("Calling AI model '%s' for evaluation using '%s' criteria.", self.model, prompt_key)
-        response_content = self.client.call_chat_completion(self.model, messages)
-        self.evaluation_result = extract_json_from_response(response_content)
+        response_dict = self.client.call_chat_completion(self.model, messages)
+        response_text = response_dict["text"]
+        self.evaluation_result = extract_json_from_response(response_text)
 
         return self.evaluation_result
 
@@ -75,12 +76,15 @@ class Evaluator:
 
         logger.info("Calling AI model '%s' for comparison between two queries", self.model)
 
-        response1, response2 = await asyncio.gather(
+        response1_dict, response2_dict = await asyncio.gather(
             asyncio.to_thread(self.client.call_chat_completion, self.model, messages1),
             asyncio.to_thread(self.client.call_chat_completion, self.model, messages2)
         )
 
-        self.parsed_result_after_comparison = { "default_query_response": response1, "optimized_query_response": response2 }
+        resp1_text = response1_dict["text"]
+        resp2_text = response2_dict["text"]
+
+        self.parsed_result_after_comparison = { "default_query_response": resp1_text, "optimized_query_response": resp2_text }
 
         return self.parsed_result_after_comparison
 
@@ -116,10 +120,11 @@ class Evaluator:
             logger.info("Calling %s model='%s'", prov, model_name)
 
             try:
-                response_text = client.call_chat_completion(
+                response_dict = client.call_chat_completion(
                     model=model_name,
                     messages=messages
                 )
+                response_text = response_dict["text"]
             except Exception as e:
                 logger.error("Error calling %s model '%s': %s", prov, model_name, e)
                 handle_http_exception(500, f"Error calling {prov} model '{model_name}': {e}")

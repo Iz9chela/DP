@@ -14,16 +14,11 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 // EvaluationResult component defined in the same file
 function EvaluationResult({
   optimizedOutput,
-  rating,
-  reasons,
   canDownload,
-  showAlternateButton,
-  alternateQueries,
   handleCopy,
   handleDownload,
   handleAddExpert,
   handleAddEmotionalStimulus,
-  handleViewOtherResults,
   hasResultId,
   expertAdded,
   emotionalAdded,
@@ -72,24 +67,6 @@ function EvaluationResult({
           className="p-button-warning execute_pos"
         />
       </div>
-      {showAlternateButton && (
-        <Button
-          label="View other results"
-          onClick={handleViewOtherResults}
-          className="p-button-secondary mt-3"
-        />
-      )}
-      {alternateQueries && alternateQueries.length > 0 && (
-        <div className="mt-2 p-2 border-round" style={{ backgroundColor: '#f0f0f0' }}>
-          <h4>Other Optimized Queries:</h4>
-          {alternateQueries.map((item, idx) => (
-            <p key={idx}>
-              {idx + 1}. {item}
-            </p>
-          ))}
-          <small>These results will hide after 5 seconds...</small>
-        </div>
-      )}
     </div>
     </div>
   );
@@ -97,16 +74,12 @@ function EvaluationResult({
 
 EvaluationResult.propTypes = {
   optimizedOutput: PropTypes.string,
-  rating: PropTypes.any,
-  reasons: PropTypes.string,
   canDownload: PropTypes.bool,
   showAlternateButton: PropTypes.bool,
   alternateQueries: PropTypes.array,
   handleCopy: PropTypes.func,
   handleDownload: PropTypes.func,
   handleAddExpert: PropTypes.func,
-  handleAddEmotionalStimulus: PropTypes.func,
-  handleViewOtherResults: PropTypes.func,
   hasResultId: PropTypes.bool,
   expertAdded: PropTypes.bool,
   emotionalAdded: PropTypes.bool,
@@ -124,20 +97,14 @@ function OptimizationPage() {
   const [isModelOpen, setIsModelOpen] = useState(false);
   const [isEvalMethodOpen, setIsEvalMethodOpen] = useState(false);
 
-  // *** Declare rating and reasons so they are available ***
-  const [rating, setRating] = useState(null);
-  const [reasons, setReasons] = useState('');
-
-  const [alternateQueries, setAlternateQueries] = useState([]);
-  const [showOtherResults, setShowOtherResults] = useState(false);
-
   const [userQuery, setUserQuery] = useState('');
   const [provider, setProvider] = useState('openai');
   const modelOptionsMap = {
     openai: [
       { label: 'gpt-3.5-turbo', value: 'gpt-3.5-turbo' },
       { label: 'gpt-4o', value: 'gpt-4o' },
-      { label: 'gpt-4o-mini', value: 'gpt-4o-mini' }
+      { label: 'gpt-4o-mini', value: 'gpt-4o-mini' },
+      { label: 'o3-mini', value: 'o3-mini' }
     ],
     claude: [
       { label: 'claude-3-haiku-20240307', value: 'claude-3-haiku-20240307' },
@@ -162,11 +129,6 @@ function OptimizationPage() {
     if (storedName) {
       setFullName(storedName);
     }
-    // Uncomment these lines for testing dummy data:
-    // setResult({ dummy: true });
-    // setOptimizedOutput("This is a test optimized query output.");
-    // setRating(8);
-    // setReasons("Test reasons for the optimized query.");
   }, []);
 
   // -- Provider & model dynamic mapping --
@@ -176,10 +138,10 @@ function OptimizationPage() {
   ];
 
   const techniqueOptions = [
-    { label: 'Chain of Thought (CoT)', value: 'CoT' },
-    { label: 'Self-Consistency (SC)', value: 'SC' },
-    { label: 'CoD', value: 'CoD' },
-    { label: 'Prompt Chaining (PC)', value: 'PC' },
+    { label: 'Chain of Thought', value: 'CoT' },
+    { label: 'Self-Consistency', value: 'SC' },
+    { label: 'Chain of Density', value: 'CoD' },
+    { label: 'Prompt Chaining', value: 'PC' },
     { label: 'ReAct', value: 'ReAct' },
     { label: 'SC + ReAct', value: 'SC_ReAct' }
   ];
@@ -233,18 +195,6 @@ function OptimizationPage() {
       setExpertAdded(false);
       setEmotionalAdded(false);
   
-      let altQ = [];
-      if (technique === 'SC' || technique === 'SC_ReAct') {
-        if (rawResponse && Array.isArray(rawResponse.Interpretations)) {
-          altQ = rawResponse.Interpretations.map((interp) => interp.Optimized_Query).filter(Boolean);
-        }
-      } else if (technique === 'CoD') {
-        if (rawResponse && Array.isArray(rawResponse.All_Densities)) {
-          altQ = rawResponse.All_Densities.map((dens) => dens.Optimized_Query).filter(Boolean);
-        }
-      }
-      setAlternateQueries(altQ);
-      setShowOtherResults(false);
     } catch (error) {
       console.error(error);
       alert(error.message);
@@ -322,9 +272,6 @@ function OptimizationPage() {
   const hasResultId = Boolean(result?._id);
   const hasOptimized = optimizedOutput.trim().length > 0;
   const canDownload = rawResponse !== null;
-  const showAlternateButton =
-    (technique === 'SC' || technique === 'SC_ReAct' || technique === 'CoD') &&
-    alternateQueries.length > 0;
 
   return (
     <div className="p-4">
@@ -344,7 +291,7 @@ function OptimizationPage() {
             />
           </div>
 
-          <div className="field mb-3" style={{ marginBottom: isModelOpen ? '80px' : '30px' }}>
+          <div className="field mb-3" style={{ marginBottom: isModelOpen ? '105px' : '30px' }}>
             <label className="block mb-2">Model:</label>
             <Dropdown
               value={model}
@@ -414,7 +361,7 @@ function OptimizationPage() {
               to="/blind"
               className={({ isActive }) => (isActive ? "grey active" : "grey")}
             >
-              Leader Board Page
+              Blind Results Page
             </NavLink>
           </li>
         </div>
@@ -461,16 +408,11 @@ function OptimizationPage() {
           {/* Always show EvaluationResult */}
           <EvaluationResult
             optimizedOutput={optimizedOutput}
-            rating={rating}
-            reasons={reasons}
             canDownload={canDownload}
-            showAlternateButton={showAlternateButton}
-            alternateQueries={alternateQueries}
             handleCopy={handleCopy}
             handleDownload={handleDownload}
             handleAddExpert={handleAddExpert}
             handleAddEmotionalStimulus={handleAddEmotionalStimulus}
-            handleViewOtherResults={handleViewOtherResults}
             hasResultId={hasResultId}
             expertAdded={expertAdded}
             emotionalAdded={emotionalAdded}

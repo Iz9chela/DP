@@ -5,6 +5,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { updateEvaluation, createComparison } from '../api/evaluationApi';
 import { NavLink } from 'react-router-dom';
 import { ProgressSpinner } from 'primereact/progressspinner';
+import 'primeicons/primeicons.css';
 
 function ComparePage() {
   const [fullName, setFullName] = useState('');
@@ -30,7 +31,8 @@ function ComparePage() {
     openai: [
       { label: 'gpt-3.5-turbo', value: 'gpt-3.5-turbo' },
       { label: 'gpt-4o', value: 'gpt-4o' },
-      { label: 'gpt-4o-mini', value: 'gpt-4o-mini' }
+      { label: 'gpt-4o-mini', value: 'gpt-4o-mini' },
+      { label: 'o3-mini', value: 'o3-mini' }
     ],
     claude: [
       { label: 'claude-3-haiku-20240307', value: 'claude-3-haiku-20240307' },
@@ -51,6 +53,18 @@ function ComparePage() {
   const [compareResult, setCompareResult] = useState('');
 
   // Handle provider changes
+  function handleCopyDefault() {
+    navigator.clipboard.writeText(output1)
+      .then(() => alert("Default query copied"))
+      .catch((err) => console.error("Copy failed", err));
+  }
+  
+  function handleCopyOptimized() {
+    navigator.clipboard.writeText(output2)
+      .then(() => alert("Optimized query copied"))
+      .catch((err) => console.error("Copy failed", err));
+  }
+  
   function handleProviderChange(e) {
     setProvider(e.value);
     setModel(modelOptionsMap[e.value][0].value);
@@ -121,6 +135,9 @@ function ComparePage() {
         <div className="columns-wrapper">
         {/* 3) Provider */}
         <div className="form-container container_border"> 
+        <div className="flex justify-content-end login" style={{ marginBottom: '1rem', alignSelf: 'flex-start' }}>
+          <span>Hello, {fullName}</span>
+        </div>
         <div className="field mb-3" style={{ marginBottom: isProviderOpen ? '60px' : '30px' }}>
           <label className="block mb-2">AIclient</label>
           <Dropdown
@@ -147,9 +164,6 @@ function ComparePage() {
           />
         </div>
 
-        <div className="flex justify-content-end login" style={{ marginBottom: '1rem' }}>
-          <span>Hello, {fullName}</span>
-        </div>
         </div>
 
         <div className="user-query">
@@ -176,7 +190,7 @@ function ComparePage() {
               to="/blind"
               className={({ isActive }) => (isActive ? "grey active" : "grey")}
             >
-              Leader Board Page
+              Blind Results Page
             </NavLink>
           </li>
         </div>
@@ -236,20 +250,36 @@ function ComparePage() {
   
             <div className="flex gap-3 outputs_fields" >
               <div className="flex-1">
+                <div className="wrapper">
                 <h4>Default Query Response</h4>
+                <Button 
+                  icon="pi pi-copy" 
+                  className="p-button-text p-button-rounded button_size" 
+                  onClick={handleCopyDefault} 
+                  tooltip="Copy Default Query" 
+                />
+                </div>
                 <InputTextarea
                   value={output1}
-                  rows={13}
+                  rows={8}
                   cols={50}
                   readOnly
                   className="w-full" style={{ width: '441px' }}
                 />
               </div>
               <div className="flex-1">
+                <div className="wrapper">
                 <h4>Optimized Query Response</h4>
+                <Button 
+                  icon="pi pi-copy" 
+                  className="p-button-text p-button-rounded button_size" 
+                  onClick={handleCopyOptimized} 
+                  tooltip="Copy Optimized Query" 
+                />
+                </div>
                 <InputTextarea
                   value={output2}
-                  rows={13}
+                  rows={8}
                   cols={50}
                   readOnly
                   className="w-full" style={{ width: '441px' }}
